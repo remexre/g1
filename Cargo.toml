@@ -1,0 +1,16 @@
+[workspace]
+members = [".", "g1d"]
+
+[package]
+authors = ["Nathan Ringo <nathan@remexre.xyz>"]
+description = "A simple graph store."
+edition = "2018"
+name = "g1"
+version = "0.1.0"
+
+[dependencies]
+hyper = "=0.13.0-alpha.4"
+log = "0.4.8"
+serde = "1.0.102"
+serde_json = "1.0.41"
+tokio = "=0.2.0-alpha.6"
