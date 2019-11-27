@@ -187,47 +187,75 @@ impl Connection {
 impl Connection {
     /// Creates a new `Atom`.
     pub async fn create_atom(&self) -> Result<Atom, QueryError> {
-        unimplemented!()
+        #[derive(Serialize)]
+        struct Body;
+        self.query("./v0/create-atom", &Body).await
     }
 
     /// Creates a new name for an `Atom`.
-    pub async fn create_name(&self, _atom: Atom, _ns: &str, _name: &str) -> Result<(), QueryError> {
-        unimplemented!()
+    pub async fn create_name(&self, atom: Atom, ns: &str, name: &str) -> Result<(), QueryError> {
+        #[derive(Serialize)]
+        struct Body<'ns, 'name> {
+            atom: Atom,
+            ns: &'ns str,
+            name: &'name str,
+        }
+
+        self.query("./v0/create-name", &Body { atom, ns, name })
+            .await
     }
 
     /// Deletes a name, returning whether it existed.
-    pub async fn delete_name(
-        &self,
-        _atom: Atom,
-        _ns: &str,
-        _name: &str,
-    ) -> Result<bool, QueryError> {
-        unimplemented!()
+    pub async fn delete_name(&self, ns: &str, name: &str) -> Result<bool, QueryError> {
+        #[derive(Serialize)]
+        struct Body<'ns, 'name> {
+            ns: &'ns str,
+            name: &'name str,
+        }
+
+        self.query("./v0/delete-name", &Body { ns, name }).await
     }
 
     /// Finds the `Atom` corresponding to the given name, if any.
     pub async fn find_atom_by_name(
         &self,
-        _ns: &str,
-        _name: &str,
+        ns: &str,
+        name: &str,
     ) -> Result<Option<Atom>, QueryError> {
-        let () = self.query("./v0/find-atom", &()).await?;
-        unimplemented!()
+        #[derive(Serialize)]
+        struct Body<'ns, 'name> {
+            ns: &'ns str,
+            name: &'name str,
+        }
+
+        self.query("./v0/find-atom-by-name", &Body { ns, name })
+            .await
     }
 
     /// Creates an edge between two `Atom`s.
-    pub async fn create_edge(&self, _from: Atom, _to: Atom, _key: &str) -> Result<(), QueryError> {
-        unimplemented!()
+    pub async fn create_edge(&self, from: Atom, to: Atom, key: &str) -> Result<(), QueryError> {
+        #[derive(Serialize)]
+        struct Body<'key> {
+            from: Atom,
+            to: Atom,
+            key: &'key str,
+        }
+
+        self.query("./v0/create-edge", &Body { from, to, key })
+            .await
     }
 
     /// Deletes an edge, returning whether it existed.
-    pub async fn delete_edge(
-        &self,
-        _from: Atom,
-        _to: Atom,
-        _key: &str,
-    ) -> Result<bool, QueryError> {
-        unimplemented!()
+    pub async fn delete_edge(&self, from: Atom, to: Atom, key: &str) -> Result<bool, QueryError> {
+        #[derive(Serialize)]
+        struct Body<'key> {
+            from: Atom,
+            to: Atom,
+            key: &'key str,
+        }
+
+        self.query("./v0/delete-edge", &Body { from, to, key })
+            .await
     }
 
     /// Returns the edges that meet the given criteria as `(from, to, key)` tuples.
@@ -235,51 +263,103 @@ impl Connection {
     /// `None` means "don't care," the query is otherwise a conjunction (an `AND`).
     pub async fn find_edges(
         &self,
-        _from: Option<Atom>,
-        _to: Option<Atom>,
-        _key: Option<&str>,
+        from: Option<Atom>,
+        to: Option<Atom>,
+        key: Option<&str>,
     ) -> Result<Vec<(Atom, Atom, String)>, QueryError> {
-        unimplemented!()
+        #[derive(Serialize)]
+        struct Body<'key> {
+            from: Option<Atom>,
+            to: Option<Atom>,
+            key: Option<&'key str>,
+        }
+
+        self.query("./v0/find-edges", &Body { from, to, key }).await
     }
 
     /// Adds a tag to an `Atom` with the given kind and value.
-    pub async fn create_tag(
-        &self,
-        _atom: Atom,
-        _kind: &str,
-        _value: &str,
-    ) -> Result<(), QueryError> {
-        unimplemented!()
+    pub async fn create_tag(&self, atom: Atom, kind: &str, value: &str) -> Result<(), QueryError> {
+        #[derive(Serialize)]
+        struct Body<'kind, 'value> {
+            atom: Atom,
+            kind: &'kind str,
+            value: &'value str,
+        }
+
+        self.query("./v0/create-tag", &Body { atom, kind, value })
+            .await
     }
 
     /// Find the tag with the given kind on the `Atom`.
-    pub async fn find_tag(&self, _atom: Atom, _kind: &str) -> Result<Option<String>, QueryError> {
-        unimplemented!()
+    pub async fn find_tag(&self, atom: Atom, kind: &str) -> Result<Option<String>, QueryError> {
+        #[derive(Serialize)]
+        struct Body<'kind> {
+            atom: Atom,
+            kind: &'kind str,
+        }
+
+        self.query("./v0/find-tag", &Body { atom, kind }).await
     }
 
     /// Deletes the tag with the given kind on the `Atom`, returning whether it was found.
-    pub async fn delete_tag(&self, _atom: Atom, _kind: &str) -> Result<bool, QueryError> {
-        unimplemented!()
+    pub async fn delete_tag(&self, atom: Atom, kind: &str) -> Result<bool, QueryError> {
+        #[derive(Serialize)]
+        struct Body<'kind> {
+            atom: Atom,
+            kind: &'kind str,
+        }
+
+        self.query("./v0/delete-tag", &Body { atom, kind }).await
     }
 
     /// Adds a blob to an `Atom` with the given MIME type and value.
     pub async fn create_blob(
         &self,
-        _atom: Atom,
-        _mime: Mime,
-        _contents: &[u8],
+        atom: Atom,
+        mime: Mime,
+        contents: &[u8],
     ) -> Result<(), QueryError> {
-        unimplemented!()
+        #[derive(Serialize)]
+        struct Body<'contents> {
+            atom: Atom,
+            #[serde(with = "utils::string")]
+            mime: Mime,
+            contents: &'contents [u8],
+        }
+
+        self.query(
+            "./v0/create-blob",
+            &Body {
+                atom,
+                mime,
+                contents,
+            },
+        )
+        .await
     }
 
     /// Find the blob with the given MIME type on the `Atom`.
-    pub async fn find_blob(&self, _atom: Atom, _mime: Mime) -> Result<Option<String>, QueryError> {
-        unimplemented!()
+    pub async fn find_blob(&self, atom: Atom, mime: Mime) -> Result<Option<String>, QueryError> {
+        #[derive(Serialize)]
+        struct Body {
+            atom: Atom,
+            #[serde(with = "utils::string")]
+            mime: Mime,
+        }
+
+        self.query("./v0/find-blob", &Body { atom, mime }).await
     }
 
     /// Deletes the blob with the given MIME type on the `Atom`, returning whether it was found.
-    pub async fn delete_blob(&self, _atom: Atom, _mime: Mime) -> Result<bool, QueryError> {
-        unimplemented!()
+    pub async fn delete_blob(&self, atom: Atom, mime: Mime) -> Result<bool, QueryError> {
+        #[derive(Serialize)]
+        struct Body {
+            atom: Atom,
+            #[serde(with = "utils::string")]
+            mime: Mime,
+        }
+
+        self.query("./v0/delete-blob", &Body { atom, mime }).await
     }
 }
 
