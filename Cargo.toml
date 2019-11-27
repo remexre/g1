@@ -6,7 +6,7 @@ authors = ["Nathan Ringo <nathan@remexre.xyz>"]
 description = "A simple graph store."
 edition = "2018"
 name = "g1"
-version = "0.1.0"
+version = "0.1.0-alpha"
 
 [dependencies]
 bytes = "0.4.12"
