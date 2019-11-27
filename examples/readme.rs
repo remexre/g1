@@ -1,4 +1,4 @@
-//! Keep this example synced with the `README.md`.
+//! Keep this example synced with the `README.md` and `lib.rs` doc-comment.
 
 use anyhow::{anyhow, Result};
 use g1::Connection;
@@ -35,5 +35,8 @@ async fn main() -> Result<()> {
     assert!(edges.contains(&(foo, bar, "next".to_string())));
     assert!(edges.contains(&(bar, foo, "prev".to_string())));
 
-    unimplemented!("{:?}", conn)
+    conn.create_tag(foo, "letters", "3").await?;
+    conn.create_blob(bar, "text/plain", b"bar").await?;
+
+    Ok(())
 }
