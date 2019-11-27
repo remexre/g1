@@ -193,42 +193,42 @@ impl Connection {
     }
 
     /// Creates a new name for an `Atom`.
-    pub async fn create_name(&self, atom: Atom, ns: &str, name: &str) -> Result<(), QueryError> {
+    pub async fn create_name(&self, atom: Atom, ns: &str, title: &str) -> Result<(), QueryError> {
         #[derive(Serialize)]
-        struct Body<'ns, 'name> {
+        struct Body<'ns, 'title> {
             atom: Atom,
             ns: &'ns str,
-            name: &'name str,
+            title: &'title str,
         }
 
-        self.query("./v0/create-name", &Body { atom, ns, name })
+        self.query("./v0/create-name", &Body { atom, ns, title })
             .await
     }
 
     /// Deletes a name, returning whether it existed.
-    pub async fn delete_name(&self, ns: &str, name: &str) -> Result<bool, QueryError> {
+    pub async fn delete_name(&self, ns: &str, title: &str) -> Result<bool, QueryError> {
         #[derive(Serialize)]
-        struct Body<'ns, 'name> {
+        struct Body<'ns, 'title> {
             ns: &'ns str,
-            name: &'name str,
+            title: &'title str,
         }
 
-        self.query("./v0/delete-name", &Body { ns, name }).await
+        self.query("./v0/delete-name", &Body { ns, title }).await
     }
 
     /// Finds the `Atom` corresponding to the given name, if any.
     pub async fn find_atom_by_name(
         &self,
         ns: &str,
-        name: &str,
+        title: &str,
     ) -> Result<Option<Atom>, QueryError> {
         #[derive(Serialize)]
-        struct Body<'ns, 'name> {
+        struct Body<'ns, 'title> {
             ns: &'ns str,
-            name: &'name str,
+            title: &'title str,
         }
 
-        self.query("./v0/find-atom-by-name", &Body { ns, name })
+        self.query("./v0/find-atom-by-name", &Body { ns, title })
             .await
     }
 
@@ -336,18 +336,6 @@ impl Connection {
             },
         )
         .await
-    }
-
-    /// Find the blob with the given MIME type on the `Atom`.
-    pub async fn find_blob(&self, atom: Atom, mime: Mime) -> Result<Option<String>, QueryError> {
-        #[derive(Serialize)]
-        struct Body {
-            atom: Atom,
-            #[serde(with = "utils::string")]
-            mime: Mime,
-        }
-
-        self.query("./v0/find-blob", &Body { atom, mime }).await
     }
 
     /// Deletes the blob with the given MIME type on the `Atom`, returning whether it was found.
