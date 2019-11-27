@@ -3,29 +3,17 @@
 //! Model
 //! -----
 //!
-//! ### Atom
+//! **Atom**: Atoms are the nodes of the graph. Each is represented as a UUID.
 //!
-//! Atoms are the nodes of the graph. Each is represented as a UUID.
+//! **Name**: Names uniquely identify an atom. They have a namespace and a title, both of which are strings.
 //!
-//! ### Names
+//! **Edge**: Edges are directed, with an atom at both endpoints. Edges have a string key associated with them. At most one edge between two atoms with a given key may exist.
 //!
-//! Names uniquely identify an atom. They have a namespace and a title, both of which are strings.
+//! **Tag**: Tags are attached to atoms. They have a kind and a value, both of which are strings.
 //!
-//! ### Edge
+//! **Blob**: Blobs are attached to atoms. They have a type, which is a MIME type, and contents, which is an arbitrarily large binary string.
 //!
-//! Edges are directed, with an atom at both endpoints. Edges have a string key associated with them. At most one edge between two atoms with a given key may exist.
-//!
-//! ### Tag
-//!
-//! Tags are attached to atoms. They have a kind and a value, both of which are strings.
-//!
-//! ### Blob
-//!
-//! Blobs are attached to atoms. They have a type, which is a MIME type, and contents, which is an arbitrarily large binary string.
-//!
-//! ### Misc.
-//!
-//! strings are UTF-8 strings, which should be no longer than 256 characters.
+//! Strings are UTF-8 strings, which should be no longer than 256 bytes.
 //!
 //! Rust API
 //! --------
@@ -69,7 +57,8 @@
 //!     assert!(edges.contains(&(bar, foo, "prev".to_string())));
 //!
 //!     conn.create_tag(foo, "letters", "3").await?;
-//!     conn.create_blob(bar, "text/plain", b"bar").await?;
+//!     conn.create_blob(bar, "text/plain".parse().unwrap(), b"bar")
+//!         .await?;
 //!
 //!     Ok(())
 //! }

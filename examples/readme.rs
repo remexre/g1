@@ -36,7 +36,8 @@ async fn main() -> Result<()> {
     assert!(edges.contains(&(bar, foo, "prev".to_string())));
 
     conn.create_tag(foo, "letters", "3").await?;
-    conn.create_blob(bar, "text/plain", b"bar").await?;
+    conn.create_blob(bar, "text/plain".parse().unwrap(), b"bar")
+        .await?;
 
     Ok(())
 }
