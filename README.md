@@ -33,7 +33,7 @@ strings are UTF-8 strings, which should be no longer than 256 characters.
 Rust API
 --------
 
-For now, only simple operations are allowed:
+For now, only simple operations are implemented:
 
 ```rust
 use anyhow::Result;
