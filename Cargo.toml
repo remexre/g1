@@ -10,11 +10,10 @@ homepage = "https://github.com/remexre/g1"
 license = "Apache-2.0/MIT"
 name = "g1"
 repository = "https://github.com/remexre/g1"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.1"
 
 [dependencies]
 bytes = "0.4.12"
-derivative = "1.0.3"
 derive_more = "0.99.2"
 futures-util-preview = "0.3.0-alpha.19"
 hyper = { version = "=0.13.0-alpha.4", features = ["unstable-stream"] }

@@ -151,32 +151,43 @@ impl Connection {
         }
     }
 
-    /// Makes a query.
-    async fn query<T: Serialize, U: DeserializeOwned>(
+    /// Makes a query, returning the body without deserializing (or finishing reading) it.
+    async fn query_body<T: Serialize>(
         &self,
         relative_url: &str,
-        body: &T,
-    ) -> Result<U, QueryError> {
+        req_body: &T,
+    ) -> Result<impl Stream<Item = Result<Bytes, QueryError>>, QueryError> {
         let url = self.base_url.join(relative_url).unwrap_or_else(|e| {
             panic!("Invalid relative url in query ({:?}): {}", relative_url, e)
         });
-        let body = serde_json::to_string(body).expect("Failed to serialize body");
+        let req_body = serde_json::to_string(req_body).expect("Failed to serialize body");
         let req = Request::post(url.as_ref())
-            .body(body.into())
+            .body(req_body.into())
             .expect("Failed to build request");
         let res = self.client.request(req).await.map_err(QueryError::Hyper)?;
         if res.status() != StatusCode::OK {
             return Err(QueryError::BadStatus(res.status()));
         }
 
+        Ok(res
+            .into_body()
+            .map(|r| r.map(Bytes::from).map_err(QueryError::Hyper)))
+    }
+
+    /// Makes a query.
+    async fn query<T: Serialize, U: DeserializeOwned>(
+        &self,
+        relative_url: &str,
+        req_body: &T,
+    ) -> Result<U, QueryError> {
         // In theory this invocation should prevent chunks from being copied until they end up in
         // the final BytesMut.
-        let body = res
-            .into_body()
-            .map(|r| r.map(Bytes::from).map(BytesMut::from))
+        let body = self
+            .query_body(relative_url, req_body)
+            .await?
+            .map(|r| r.map(BytesMut::from))
             .try_concat()
-            .await
-            .map_err(QueryError::Hyper)?;
+            .await?;
 
         let out = serde_json::from_slice(&body).map_err(QueryError::BadResponse)?;
         Ok(out)
@@ -348,6 +359,22 @@ impl Connection {
         }
 
         self.query("./v0/delete-blob", &Body { atom, mime }).await
+    }
+
+    /// Streams a blob as a set of `Bytes`.
+    pub async fn stream_blob(
+        &self,
+        atom: Atom,
+        mime: Mime,
+    ) -> Result<impl Stream<Item = Result<Bytes, QueryError>>, QueryError> {
+        #[derive(Serialize)]
+        struct Body {
+            atom: Atom,
+            #[serde(with = "utils::string")]
+            mime: Mime,
+        }
+
+        self.query_body("./v0/get-blob", &Body { atom, mime }).await
     }
 }
 
