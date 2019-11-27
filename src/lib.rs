@@ -38,6 +38,7 @@ use bytes::{Bytes, BytesMut};
 use derive_more::{Display, FromStr};
 use futures_util::try_stream::TryStreamExt;
 use hyper::{client::HttpConnector, Client, Request, StatusCode};
+pub use mime::Mime;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_derive::{Deserialize, Serialize};
 use std::error::Error;
@@ -46,7 +47,20 @@ use url::Url;
 use uuid::Uuid;
 
 /// Atoms are the nodes of the graph. Each is represented as a UUID.
-#[derive(Debug, Deserialize, Display, FromStr, Serialize)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    Display,
+    FromStr,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+    Serialize,
+)]
 #[serde(transparent)]
 pub struct Atom(#[serde(with = "utils::string")] Uuid);
 
@@ -103,10 +117,104 @@ impl Connection {
         let out = serde_json::from_slice(&body).map_err(QueryError::BadResponse)?;
         Ok(out)
     }
+}
+
+// The simple/CRUD API.
+impl Connection {
+    /// Creates a new `Atom`.
+    pub async fn create_atom(&self) -> Result<Atom, QueryError> {
+        unimplemented!()
+    }
+
+    /// Creates a new name for an `Atom`.
+    pub async fn create_name(&self, _atom: Atom, _ns: &str, _name: &str) -> Result<(), QueryError> {
+        unimplemented!()
+    }
+
+    /// Deletes a name, returning whether it existed.
+    pub async fn delete_name(
+        &self,
+        _atom: Atom,
+        _ns: &str,
+        _name: &str,
+    ) -> Result<bool, QueryError> {
+        unimplemented!()
+    }
 
     /// Finds the `Atom` corresponding to the given name, if any.
-    pub async fn find_atom(&self, _name: &str) -> Result<Option<Atom>, QueryError> {
+    pub async fn find_atom_by_name(
+        &self,
+        _ns: &str,
+        _name: &str,
+    ) -> Result<Option<Atom>, QueryError> {
         let () = self.query("./v0/find-atom", &()).await?;
+        unimplemented!()
+    }
+
+    /// Creates an edge between two `Atom`s.
+    pub async fn create_edge(&self, _from: Atom, _to: Atom, _key: &str) -> Result<(), QueryError> {
+        unimplemented!()
+    }
+
+    /// Deletes an edge, returning whether it existed.
+    pub async fn delete_edge(
+        &self,
+        _from: Atom,
+        _to: Atom,
+        _key: &str,
+    ) -> Result<bool, QueryError> {
+        unimplemented!()
+    }
+
+    /// Returns the edges that meet the given criteria as `(from, to, key)` tuples.
+    ///
+    /// `None` means "don't care," the query is otherwise a conjunction (an `AND`).
+    pub async fn find_edges(
+        &self,
+        _from: Option<Atom>,
+        _to: Option<Atom>,
+        _key: Option<&str>,
+    ) -> Result<Vec<(Atom, Atom, String)>, QueryError> {
+        unimplemented!()
+    }
+
+    /// Adds a tag to an `Atom` with the given kind and value.
+    pub async fn create_tag(
+        &self,
+        _atom: Atom,
+        _kind: &str,
+        _value: &str,
+    ) -> Result<(), QueryError> {
+        unimplemented!()
+    }
+
+    /// Find the tag with the given kind on the `Atom`.
+    pub async fn find_tag(&self, _atom: Atom, _kind: &str) -> Result<Option<String>, QueryError> {
+        unimplemented!()
+    }
+
+    /// Deletes the tag with the given kind on the `Atom`, returning whether it was found.
+    pub async fn delete_tag(&self, _atom: Atom, _kind: &str) -> Result<bool, QueryError> {
+        unimplemented!()
+    }
+
+    /// Adds a blob to an `Atom` with the given MIME type and value.
+    pub async fn create_blob(
+        &self,
+        _atom: Atom,
+        _mime: Mime,
+        _contents: &[u8],
+    ) -> Result<(), QueryError> {
+        unimplemented!()
+    }
+
+    /// Find the blob with the given MIME type on the `Atom`.
+    pub async fn find_blob(&self, _atom: Atom, _mime: Mime) -> Result<Option<String>, QueryError> {
+        unimplemented!()
+    }
+
+    /// Deletes the blob with the given MIME type on the `Atom`, returning whether it was found.
+    pub async fn delete_blob(&self, _atom: Atom, _mime: Mime) -> Result<bool, QueryError> {
         unimplemented!()
     }
 }

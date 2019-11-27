@@ -16,7 +16,7 @@ Names uniquely identify an atom. They have a namespace and a title, both of whic
 
 ### Edge
 
-Edges are directed, with an atom at both endpoints. Edges have a string associated with them.
+Edges are directed, with an atom at both endpoints. Edges have a string key associated with them. At most one edge between two atoms with a given key may exist.
 
 ### Tag
 

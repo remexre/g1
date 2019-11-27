@@ -6,8 +6,8 @@ pub mod string {
     //! ## Example
     //!
     //! ```
-    //! use std::net::Ipv4Address;
-    //! let s = Ipv4Address::from([127, 0, 0, 1]);
+    //! use std::net::Ipv4Addr;
+    //! let s = Ipv4Addr::from([127, 0, 0, 1]);
     //! ```
 
     use serde::{de::Error, Deserialize, Deserializer, Serializer};
