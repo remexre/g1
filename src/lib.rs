@@ -11,7 +11,7 @@
 //!
 //! **Tag**: Tags are attached to atoms. They have a kind and a value, both of which are strings.
 //!
-//! **Blob**: Blobs are attached to atoms. They have a type, which is a MIME type, and contents, which is an arbitrarily large binary string.
+//! **Blob**: Blobs are attached to atoms. They have a disposition, which is a string; a type, which is a MIME type; and contents, which are an arbitrarily large binary string. Blobs are referred to by the SHA256 hash of their contents.
 //!
 //! Strings are UTF-8 strings, which should be no longer than 256 bytes.
 //!
@@ -57,7 +57,7 @@
 //!     assert!(edges.contains(&(bar, foo, "prev".to_string())));
 //!
 //!     conn.create_tag(foo, "letters", "3").await?;
-//!     conn.create_blob(bar, "text/plain".parse().unwrap(), b"bar")
+//!     conn.create_blob(bar, "name again", "text/plain".parse().unwrap(), b"bar")
 //!         .await?;
 //!
 //!     Ok(())
@@ -105,7 +105,11 @@ use hyper::{client::HttpConnector, Client, Request, StatusCode};
 pub use mime::Mime;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_derive::{Deserialize, Serialize};
-use std::error::Error;
+use std::{
+    error::Error,
+    fmt::{Display, Formatter, Result as FmtResult},
+    str::FromStr,
+};
 use tokio::prelude::*;
 use url::Url;
 use uuid::Uuid;
@@ -127,6 +131,88 @@ use uuid::Uuid;
 )]
 #[serde(transparent)]
 pub struct Atom(#[serde(with = "utils::string")] Uuid);
+
+/// Hashes are identifiers for blobs. Each is the SHA256 hash of the blob.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(transparent)]
+pub struct Hash([u8; 32]);
+
+impl Display for Hash {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        for i in 0..32 {
+            write!(fmt, "{:02x}", self.0[i])?;
+        }
+        Ok(())
+    }
+}
+
+impl FromStr for Hash {
+    type Err = HashParseError;
+
+    fn from_str(s: &str) -> Result<Hash, HashParseError> {
+        fn hex(ch: char, i: usize) -> Result<u8, HashParseError> {
+            Ok(match ch {
+                '0' => 0,
+                '1' => 1,
+                '2' => 2,
+                '3' => 3,
+                '4' => 4,
+                '5' => 5,
+                '6' => 6,
+                '7' => 7,
+                '8' => 8,
+                '9' => 9,
+                'a' | 'A' => 10,
+                'b' | 'B' => 11,
+                'c' | 'C' => 12,
+                'd' | 'D' => 13,
+                'e' | 'E' => 14,
+                'f' | 'F' => 15,
+                ch => return Err(HashParseError::BadChar(i, ch)),
+            })
+        }
+
+        if s.len() != 64 {
+            return Err(HashParseError::BadLength(s.len()));
+        }
+
+        let mut hash = [0; 32];
+        for (i, ch) in s.chars().enumerate() {
+            let x = hex(ch, i)?;
+            let j = i / 2;
+            let off = if (i % 2) == 0 { 4 } else { 0 };
+            hash[j] |= x << off;
+        }
+        Ok(Hash(hash))
+    }
+}
+
+/// An error parsing a `Hash`.
+#[derive(Clone, Copy, Debug)]
+pub enum HashParseError {
+    /// The character at the given index wasn't a hex character.
+    BadChar(usize, char),
+
+    /// The hash had an unexpected length.
+    BadLength(usize),
+}
+
+impl Display for HashParseError {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        match self {
+            HashParseError::BadChar(i, c) => write!(
+                fmt,
+                "the character {:?} at index {} wasn't a hex character",
+                c, i
+            ),
+            HashParseError::BadLength(l) => {
+                write!(fmt, "the string should be of length 64, not {}", l)
+            }
+        }
+    }
+}
+
+impl Error for HashParseError {}
 
 /// A connection to a G1 database.
 #[derive(Debug)]
@@ -323,16 +409,18 @@ impl Connection {
         self.query("./v0/delete-tag", &Body { atom, kind }).await
     }
 
-    /// Adds a blob to an `Atom` with the given MIME type and value.
+    /// Adds a blob to an `Atom` with the given disposition, MIME type and value.
     pub async fn create_blob(
         &self,
         atom: Atom,
+        disposition: &str,
         mime: Mime,
         contents: &[u8],
     ) -> Result<(), QueryError> {
         #[derive(Serialize)]
-        struct Body<'contents> {
+        struct Body<'disposition, 'contents> {
             atom: Atom,
+            disposition: &'disposition str,
             #[serde(with = "utils::string")]
             mime: Mime,
             contents: &'contents [u8],
@@ -342,6 +430,7 @@ impl Connection {
             "./v0/create-blob",
             &Body {
                 atom,
+                disposition,
                 mime,
                 contents,
             },
@@ -349,32 +438,44 @@ impl Connection {
         .await
     }
 
-    /// Deletes the blob with the given MIME type on the `Atom`, returning whether it was found.
-    pub async fn delete_blob(&self, atom: Atom, mime: Mime) -> Result<bool, QueryError> {
+    /// Deletes the blob with the given disposition and MIME type on the `Atom`, returning whether
+    /// it was found.
+    pub async fn delete_blob(
+        &self,
+        atom: Atom,
+        disposition: &str,
+        mime: Mime,
+    ) -> Result<bool, QueryError> {
         #[derive(Serialize)]
-        struct Body {
+        struct Body<'disposition> {
             atom: Atom,
+            disposition: &'disposition str,
             #[serde(with = "utils::string")]
             mime: Mime,
         }
 
-        self.query("./v0/delete-blob", &Body { atom, mime }).await
+        self.query(
+            "./v0/delete-blob",
+            &Body {
+                atom,
+                disposition,
+                mime,
+            },
+        )
+        .await
     }
 
     /// Streams a blob as a set of `Bytes`.
     pub async fn stream_blob(
         &self,
-        atom: Atom,
-        mime: Mime,
+        hash: Hash,
     ) -> Result<impl Stream<Item = Result<Bytes, QueryError>>, QueryError> {
         #[derive(Serialize)]
         struct Body {
-            atom: Atom,
-            #[serde(with = "utils::string")]
-            mime: Mime,
+            hash: Hash,
         }
 
-        self.query_body("./v0/get-blob", &Body { atom, mime }).await
+        self.query_body("./v0/get-blob", &Body { hash }).await
     }
 }
 

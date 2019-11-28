@@ -10,7 +10,7 @@ homepage = "https://github.com/remexre/g1"
 license = "Apache-2.0/MIT"
 name = "g1"
 repository = "https://github.com/remexre/g1"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 
 [dependencies]
 bytes = "0.4.12"
