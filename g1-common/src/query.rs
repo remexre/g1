@@ -170,6 +170,7 @@ impl FromStr for Predicate {
 ///
 /// assert_eq!(
 ///     r#"
+///         % Start searching from the end.
 ///         path(x, y) :-
 ///             path(x, z),
 ///             edge(z, y).
@@ -218,10 +219,10 @@ impl Display for Clause {
         if self.body.is_empty() {
             write!(fmt, "{}.", self.head)
         } else {
-            write!(fmt, "{} :-", self.head)?;
+            writeln!(fmt, "{} :-", self.head)?;
             let l = self.body.len();
             for (i, (negated, pred)) in self.body.iter().enumerate() {
-                fmt.write_str("\t")?;
+                fmt.write_str("    ")?;
                 if *negated {
                     fmt.write_str("!")?;
                 }
@@ -353,7 +354,7 @@ impl Display for Query {
         for clause in &self.clauses {
             writeln!(fmt, "{}", clause)?;
         }
-        write!(fmt, "{}", self.predicate)
+        write!(fmt, "?- {}.", self.predicate)
     }
 }
 

@@ -15,6 +15,10 @@ impl<'src> Iterator for Lexer<'src> {
         if self.0.token == Token::End {
             None
         } else {
+            while self.0.token == Token::Comment {
+                self.0.advance();
+            }
+
             let out = (self.0.token, self.0.slice());
             self.0.advance();
             Some(out)
@@ -29,6 +33,9 @@ pub enum Token {
 
     #[error]
     Error,
+
+    #[regex = "%[^\\r\\n]*"]
+    Comment,
 
     #[token = ")"]
     ParenClose,

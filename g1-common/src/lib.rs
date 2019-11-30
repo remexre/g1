@@ -1,5 +1,4 @@
 //! Common types and traits between the client and server portion of the G1 graph store.
-/*
 #![deny(
     bad_style,
     bare_trait_objects,
@@ -32,17 +31,21 @@
     unused_results,
     while_true
 )]
-*/
 
 #[cfg(feature = "parser")]
 use lalrpop_util::lalrpop_mod;
 
 #[cfg(feature = "parser")]
-pub mod lexer;
+mod lexer;
 #[cfg(feature = "parser")]
-lalrpop_mod!(pub parser);
+lalrpop_mod!(parser);
 mod query;
+#[cfg(test)]
+mod strategies;
+#[cfg(test)]
+mod tests;
 mod utils;
+mod validate;
 
 pub use crate::query::{Clause, Predicate, Query, Value};
 use async_trait::async_trait;
@@ -277,7 +280,7 @@ pub trait Connection: Send + Sync {
 /// The error returned by operations on a G1 server.
 pub trait Error: std::error::Error {
     /// Creates an error representing an invalid query.
-    fn invalid_query(msg: String) -> Self;
+    fn invalid_query(msg: &'static str) -> Self;
 
     /// Returns whether the error was created by `invalid_query`.
     fn is_invalid_query(&self) -> bool;

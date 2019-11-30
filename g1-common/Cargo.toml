@@ -20,6 +20,11 @@ uuid = "0.8.1"
 [build-dependencies]
 lalrpop = { version = "0.17.2", optional = true }
 
+[dev-dependencies]
+pretty_assertions = "0.6.1"
+proptest = "0.9.4"
+
 [features]
 default = ["parser"]
 parser = ["lalrpop", "lalrpop-util", "logos"]
+solver = []
