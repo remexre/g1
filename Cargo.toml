@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "g1-common", "g1-server", "g1d"]
+members = [".", "g1-cli", "g1-common", "g1-server", "g1d"]
 
 [package]
 authors = ["Nathan Ringo <nathan@remexre.xyz>"]

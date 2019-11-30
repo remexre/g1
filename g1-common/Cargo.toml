@@ -16,6 +16,7 @@ mime = "0.3.14"
 serde = "1.0.102"
 serde_derive = "1.0.103"
 uuid = "0.8.1"
+topological-sort = "0.1.0"
 
 [build-dependencies]
 lalrpop = { version = "0.17.2", optional = true }

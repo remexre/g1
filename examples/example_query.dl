@@ -1,0 +1,10 @@
+edge("A", "B").
+edge("A", "C").
+edge("B", "C").
+
+path(X, X).
+path(X, Z) :-
+    path(X, Y),
+    edge(Y, Z).
+
+?- path("A", X).

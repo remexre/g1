@@ -1,6 +1,8 @@
+//! G1's query language, which is a Datalog variant.
+
 #[cfg(feature = "parser")]
 use crate::{
-    lexer::{Lexer, Token},
+    lexer::Lexer,
     parser::{ClauseParser, PredicateParser, QueryParser, ValueParser},
 };
 #[cfg(feature = "parser")]
@@ -44,7 +46,7 @@ pub enum Value {
     /// A string.
     String(String),
 
-    /// A free variable.
+    /// A variable.
     Var(String),
 }
 
@@ -60,12 +62,13 @@ impl Display for Value {
 
 #[cfg(feature = "parser")]
 impl FromStr for Value {
-    type Err = ParseError<(), (Token, String), &'static str>;
+    type Err = ParseError<String, String, &'static str>;
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
-        ValueParser::new()
-            .parse(Lexer::new(src))
-            .map_err(|err| err.map_token(|(t, l)| (t, l.to_string())))
+        ValueParser::new().parse(Lexer::new(src)).map_err(|err| {
+            err.map_location(|()| "TODO".to_string())
+                .map_token(|(_, l)| l.to_string())
+        })
     }
 }
 
@@ -113,12 +116,15 @@ impl Display for Predicate {
 
 #[cfg(feature = "parser")]
 impl FromStr for Predicate {
-    type Err = ParseError<(), (Token, String), &'static str>;
+    type Err = ParseError<String, String, &'static str>;
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         PredicateParser::new()
             .parse(Lexer::new(src))
-            .map_err(|err| err.map_token(|(t, l)| (t, l.to_string())))
+            .map_err(|err| {
+                err.map_location(|()| "TODO".to_string())
+                    .map_token(|(_, l)| l.to_string())
+            })
     }
 }
 
@@ -236,12 +242,13 @@ impl Display for Clause {
 
 #[cfg(feature = "parser")]
 impl FromStr for Clause {
-    type Err = ParseError<(), (Token, String), &'static str>;
+    type Err = ParseError<String, String, &'static str>;
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
-        ClauseParser::new()
-            .parse(Lexer::new(src))
-            .map_err(|err| err.map_token(|(t, l)| (t, l.to_string())))
+        ClauseParser::new().parse(Lexer::new(src)).map_err(|err| {
+            err.map_location(|()| "TODO".to_string())
+                .map_token(|(_, l)| l.to_string())
+        })
     }
 }
 
@@ -360,11 +367,12 @@ impl Display for Query {
 
 #[cfg(feature = "parser")]
 impl FromStr for Query {
-    type Err = ParseError<(), (Token, String), &'static str>;
+    type Err = ParseError<String, String, &'static str>;
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
-        QueryParser::new()
-            .parse(Lexer::new(src))
-            .map_err(|err| err.map_token(|(t, l)| (t, l.to_string())))
+        QueryParser::new().parse(Lexer::new(src)).map_err(|err| {
+            err.map_location(|()| "TODO".to_string())
+                .map_token(|(_, l)| l.to_string())
+        })
     }
 }

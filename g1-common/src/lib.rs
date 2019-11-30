@@ -37,17 +37,17 @@ use lalrpop_util::lalrpop_mod;
 
 #[cfg(feature = "parser")]
 mod lexer;
+pub mod nameless;
 #[cfg(feature = "parser")]
 lalrpop_mod!(parser);
-mod query;
+pub mod query;
 #[cfg(test)]
 mod strategies;
 #[cfg(test)]
 mod tests;
 mod utils;
-mod validate;
 
-pub use crate::query::{Clause, Predicate, Query, Value};
+use crate::{nameless::NamelessQuery, query::Value};
 use async_trait::async_trait;
 use bytes::Bytes;
 use derive_more::{Display, FromStr};
@@ -260,10 +260,14 @@ pub trait Connection: Send + Sync {
     ) -> Result<Hash, Self::Error>;
 
     /// Performs a query, returning multiple results (at most `limit`).
-    async fn query(&self, limit: usize, query: Query) -> Result<Vec<Vec<Value>>, Self::Error>;
+    async fn query(
+        &self,
+        limit: usize,
+        query: NamelessQuery,
+    ) -> Result<Vec<Vec<Value>>, Self::Error>;
 
     /// Performs a query, returning at most one result.
-    async fn query_first(&self, query: Query) -> Result<Option<Vec<Value>>, Self::Error> {
+    async fn query_first(&self, query: NamelessQuery) -> Result<Option<Vec<Value>>, Self::Error> {
         let mut v = self.query(1, query).await?;
         debug_assert!(v.len() < 2);
         Ok(v.pop())
@@ -272,7 +276,7 @@ pub trait Connection: Send + Sync {
     /// Performs a query, returning whether it had results.
     ///
     /// Note that the default implementation can be inefficient.
-    async fn query_has_results(&self, query: Query) -> Result<bool, Self::Error> {
+    async fn query_has_results(&self, query: NamelessQuery) -> Result<bool, Self::Error> {
         Ok(self.query_first(query).await?.is_some())
     }
 }
