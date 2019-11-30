@@ -1,0 +1,95 @@
+use crate::{
+	lexer::{parse_stringish, Token},
+	query::{Clause, Predicate, Query, Value},
+};
+
+grammar<'src>;
+
+Var: String = {
+	EscapedVar => parse_stringish(<>.1),
+	UnescapedVar => <>.1.to_string(),
+};
+
+pub Value: Value = {
+	Int => Value::Int(<>.1.parse().unwrap()), // TODO: Shouldn't panic here...
+	String => Value::String(parse_stringish(<>.1)),
+	Var => Value::Var(<>),
+};
+
+Values: Vec<Value> = {
+	")" => Vec::new(),
+	"," <head: Value> <tail: Values> => {
+		let mut tail = tail;
+		tail.push(head);
+		tail
+	},
+};
+
+pub Predicate: Predicate = {
+	<name: Var> "(" ")" => Predicate { name, args: Vec::new() },
+	<name: Var> "(" <head: Value> <tail: Values> => {
+		let mut args = tail;
+		args.push(head);
+		args.reverse();
+		Predicate { name, args }
+	},
+};
+
+Predicates: Vec<(bool, Predicate)> = {
+	"." => Vec::new(),
+	"," <head: Predicate> <tail: Predicates> => {
+		let mut tail = tail;
+		tail.push((false, head));
+		tail
+	},
+	"," "!" <head: Predicate> <tail: Predicates> => {
+		let mut tail = tail;
+		tail.push((true, head));
+		tail
+	},
+};
+
+pub Clause: Clause = {
+	<head: Predicate> "." => Clause { head, body: Vec::new() },
+	<head: Predicate> ":-" <head_body: Predicate> <tail_body: Predicates> => {
+		let mut body = tail_body;
+		body.push((false, head_body));
+		body.reverse();
+		Clause { head, body }
+	},
+	<head: Predicate> ":-" "!" <head_body: Predicate> <tail_body: Predicates> => {
+		let mut body = tail_body;
+		body.push((true, head_body));
+		body.reverse();
+		Clause { head, body }
+	},
+};
+
+Clauses: Vec<Clause> = {
+	=> Vec::new(),
+	<init: Clauses> <tail: Clause> => {
+		let mut body = init;
+		body.push(tail);
+		body
+	},
+};
+
+pub Query: Query = {
+	<clauses: Clauses> "?-" <predicate: Predicate> "." => Query { clauses, predicate },
+};
+
+extern {
+	enum (Token, &'src str) {
+		")" => (Token::ParenClose, _),
+		"(" => (Token::ParenOpen, _),
+		"." => (Token::Period, _),
+		"," => (Token::Comma, _),
+		"?-" => (Token::Query, _),
+		":-" => (Token::Turnstile, _),
+		"!" => (Token::Not, _),
+		Int => (Token::Int, _),
+		String => (Token::String, _),
+		EscapedVar => (Token::EscapedVar, _),
+		UnescapedVar => (Token::Var, _),
+	}
+}

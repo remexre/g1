@@ -7,7 +7,7 @@
 //!
 //! **Name**: Names uniquely identify an atom. They have a namespace and a title, both of which are strings.
 //!
-//! **Edge**: Edges are directed, with an atom at both endpoints. Edges have a string key associated with them. At most one edge between two atoms with a given key may exist.
+//! **Edge**: Edges are directed, with an atom at both endpoints. Edges have a string label associated with them. At most one edge between two atoms with a given label may exist.
 //!
 //! **Tag**: Tags are attached to atoms. They have a kind and a value, both of which are strings.
 //!
@@ -96,6 +96,7 @@
     while_true
 )]
 
+/*
 mod utils;
 
 use bytes::{Bytes, BytesMut};
@@ -330,48 +331,48 @@ impl Connection {
     }
 
     /// Creates an edge between two `Atom`s.
-    pub async fn create_edge(&self, from: Atom, to: Atom, key: &str) -> Result<(), QueryError> {
+    pub async fn create_edge(&self, from: Atom, to: Atom, label: &str) -> Result<(), QueryError> {
         #[derive(Serialize)]
-        struct Body<'key> {
+        struct Body<'label> {
             from: Atom,
             to: Atom,
-            key: &'key str,
+            label: &'label str,
         }
 
-        self.query("./v0/create-edge", &Body { from, to, key })
+        self.query("./v0/create-edge", &Body { from, to, label })
             .await
     }
 
     /// Deletes an edge, returning whether it existed.
-    pub async fn delete_edge(&self, from: Atom, to: Atom, key: &str) -> Result<bool, QueryError> {
+    pub async fn delete_edge(&self, from: Atom, to: Atom, label: &str) -> Result<bool, QueryError> {
         #[derive(Serialize)]
-        struct Body<'key> {
+        struct Body<'label> {
             from: Atom,
             to: Atom,
-            key: &'key str,
+            label: &'label str,
         }
 
-        self.query("./v0/delete-edge", &Body { from, to, key })
+        self.query("./v0/delete-edge", &Body { from, to, label })
             .await
     }
 
-    /// Returns the edges that meet the given criteria as `(from, to, key)` tuples.
+    /// Returns the edges that meet the given criteria as `(from, to, label)` tuples.
     ///
     /// `None` means "don't care," the query is otherwise a conjunction (an `AND`).
     pub async fn find_edges(
         &self,
         from: Option<Atom>,
         to: Option<Atom>,
-        key: Option<&str>,
+        label: Option<&str>,
     ) -> Result<Vec<(Atom, Atom, String)>, QueryError> {
         #[derive(Serialize)]
-        struct Body<'key> {
+        struct Body<'label> {
             from: Option<Atom>,
             to: Option<Atom>,
-            key: Option<&'key str>,
+            label: Option<&'label str>,
         }
 
-        self.query("./v0/find-edges", &Body { from, to, key }).await
+        self.query("./v0/find-edges", &Body { from, to, label }).await
     }
 
     /// Adds a tag to an `Atom` with the given kind and value.
@@ -522,3 +523,4 @@ impl Error for QueryError {
         }
     }
 }
+*/

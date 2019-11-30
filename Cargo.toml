@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "g1d"]
+members = [".", "g1-common", "g1-server", "g1d"]
 
 [package]
 authors = ["Nathan Ringo <nathan@remexre.xyz>"]
@@ -10,21 +10,22 @@ homepage = "https://github.com/remexre/g1"
 license = "Apache-2.0/MIT"
 name = "g1"
 repository = "https://github.com/remexre/g1"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 
 [dependencies]
-bytes = "0.4.12"
+bytes = "0.5.2"
 derive_more = "0.99.2"
-futures-util-preview = "0.3.0-alpha.19"
-hyper = { version = "=0.13.0-alpha.4", features = ["unstable-stream"] }
+#futures = "0.3.1"
+# hyper = { version = "=0.13.0-alpha.4", features = ["unstable-stream"] }
 log = "0.4.8"
 mime = "0.3.14"
 serde = "1.0.102"
 serde_derive = "1.0.103"
 serde_json = "1.0.42"
-tokio = "=0.2.0-alpha.6"
+tokio = "0.2.2"
 url = "2.1.0"
 uuid = "0.8.1"
 
 [dev-dependencies]
-anyhow = "1.0.23"
+anyhow = "1.0.25"
+tokio = { version = "0.2.2", features = ["macros"] }

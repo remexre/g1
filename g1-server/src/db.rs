@@ -76,8 +76,8 @@ impl Database {
             create table if not exists edges
               ( from text not null
               , to text not null
-              , key text not null
-              , constraint edgeUnique unique (from, to, key)
+              , label text not null
+              , constraint edgeUnique unique (from, to, label)
               );
             create table if not exists tags
               ( atom text not null

@@ -1,0 +1,25 @@
+[package]
+authors = ["Nathan Ringo <nathan@remexre.xyz>"]
+description = "Common types and traits between the client and server portion of the G1 graph store."
+edition = "2018"
+name = "g1-common"
+version = "0.1.0-alpha.3"
+
+[dependencies]
+async-trait = "0.1.19"
+bytes = "0.5.2"
+derive_more = "0.99.2"
+futures = "0.3.1"
+lalrpop-util = { version = "0.17.2", optional = true }
+logos = { version = "0.9.7", optional = true }
+mime = "0.3.14"
+serde = "1.0.102"
+serde_derive = "1.0.103"
+uuid = "0.8.1"
+
+[build-dependencies]
+lalrpop = { version = "0.17.2", optional = true }
+
+[features]
+default = ["parser"]
+parser = ["lalrpop", "lalrpop-util", "logos"]
