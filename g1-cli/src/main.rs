@@ -21,7 +21,7 @@ fn main(args: Args) -> Result<()> {
                 }
             };
             let query = src.parse::<Query>()?;
-            let query = NamelessQuery::from(query);
+            let query = NamelessQuery::from_query::<g1_common::SimpleError>(query)?;
             println!("{:#?}", query);
             Ok(())
         }

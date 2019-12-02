@@ -50,7 +50,7 @@ mod utils;
 use crate::{nameless::NamelessQuery, query::Value};
 use async_trait::async_trait;
 use bytes::Bytes;
-use derive_more::{Display, FromStr};
+use derive_more::{Constructor, Display, From, FromStr, Into};
 use futures::prelude::*;
 pub use mime::Mime;
 use serde_derive::{Deserialize, Serialize};
@@ -284,8 +284,17 @@ pub trait Connection: Send + Sync {
 /// The error returned by operations on a G1 server.
 pub trait Error: std::error::Error {
     /// Creates an error representing an invalid query.
-    fn invalid_query(msg: &'static str) -> Self;
+    fn invalid_query(msg: String) -> Self;
+}
 
-    /// Returns whether the error was created by `invalid_query`.
-    fn is_invalid_query(&self) -> bool;
+/// A newtype around `String` that impls `Error`.
+#[derive(Clone, Constructor, Debug, Display, Eq, From, Hash, Into, Ord, PartialEq, PartialOrd)]
+pub struct SimpleError(pub String);
+
+impl std::error::Error for SimpleError {}
+
+impl Error for SimpleError {
+    fn invalid_query(msg: String) -> SimpleError {
+        SimpleError(msg)
+    }
 }

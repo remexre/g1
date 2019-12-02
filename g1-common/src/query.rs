@@ -31,7 +31,7 @@ fn fmt_var(s: &str, fmt: &mut Formatter) -> FmtResult {
 /// A data value.
 ///
 /// ```
-/// # use g1_common::Value;
+/// # use g1_common::query::Value;
 /// assert_eq!("123".parse(), Ok(Value::Int(123)));
 /// assert_eq!("-123".parse(), Ok(Value::Int(-123)));
 /// assert_eq!(r#""hello,\nworld!""#.parse(), Ok(Value::String("hello,\nworld!".to_string())));
@@ -75,7 +75,7 @@ impl FromStr for Value {
 /// A call to a rule.
 ///
 /// ```
-/// # use g1_common::{Predicate, Value};
+/// # use g1_common::query::{Predicate, Value};
 /// assert_eq!("''()".parse(), Ok(Predicate {
 ///     name: "".to_string(),
 ///     args: Vec::new(),
@@ -131,7 +131,7 @@ impl FromStr for Predicate {
 /// A single clause, used for deduction.
 ///
 /// ```
-/// # use g1_common::{Clause, Predicate, Value};
+/// # use g1_common::query::{Clause, Predicate, Value};
 /// assert_eq!("foo().".parse(), Ok(Clause {
 ///     head: Predicate {
 ///         name: "foo".to_string(),
@@ -255,7 +255,7 @@ impl FromStr for Clause {
 /// A complete query to the database.
 ///
 /// ```
-/// # use g1_common::{Clause, Predicate, Query, Value};
+/// # use g1_common::query::{Clause, Predicate, Query, Value};
 /// assert_eq!(
 ///     r#"
 ///         edge("A", "B").
@@ -337,7 +337,7 @@ impl FromStr for Clause {
 ///                 ],
 ///             },
 ///         ],
-///         predicate: Predicate {
+///         goal: Predicate {
 ///             name: "path".to_string(),
 ///             args: vec![
 ///                 Value::String("A".to_string()),
@@ -352,8 +352,8 @@ pub struct Query {
     /// The clauses to be used by the query.
     pub clauses: Vec<Clause>,
 
-    /// The value to solve for.
-    pub predicate: Predicate,
+    /// The predicate to solve for.
+    pub goal: Predicate,
 }
 
 impl Display for Query {
@@ -361,7 +361,7 @@ impl Display for Query {
         for clause in &self.clauses {
             writeln!(fmt, "{}", clause)?;
         }
-        write!(fmt, "?- {}.", self.predicate)
+        write!(fmt, "?- {}.", self.goal)
     }
 }
 

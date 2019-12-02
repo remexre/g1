@@ -75,7 +75,7 @@ Clauses: Vec<Clause> = {
 };
 
 pub Query: Query = {
-	<clauses: Clauses> "?-" <predicate: Predicate> "." => Query { clauses, predicate },
+	<clauses: Clauses> "?-" <goal: Predicate> "." => Query { clauses, goal },
 };
 
 extern {
