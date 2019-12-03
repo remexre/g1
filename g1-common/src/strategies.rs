@@ -21,7 +21,7 @@ impl Arbitrary for Value {
     fn arbitrary_with((): ()) -> Self::Strategy {
         prop_oneof![
             any::<i64>().prop_map(Value::Int),
-            STRING_REGEX.prop_map(Value::String),
+            STRING_REGEX.prop_map(Value::Str),
             STRING_REGEX.prop_map(Value::Var),
         ]
     }
@@ -70,6 +70,6 @@ impl Arbitrary for Query {
 
     fn arbitrary_with((): ()) -> Self::Strategy {
         (vec(any::<Clause>(), 0..10), any::<Predicate>())
-            .prop_map(|(clauses, predicate)| Query { clauses, predicate })
+            .prop_map(|(clauses, goal)| Query { clauses, goal })
     }
 }

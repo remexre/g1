@@ -13,7 +13,7 @@ fn main(args: Args) -> Result<()> {
     match args.subcommand {
         Subcommand::RunSelfContained { path } => {
             let query = load_query(path)?;
-            let solns = naive_solve_selfcontained(None, &query);
+            let solns = naive_solve_selfcontained(&query);
             println!("Found {} solutions:", solns.len());
             for soln in solns {
                 dbg!(soln);

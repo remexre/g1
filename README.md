@@ -10,11 +10,11 @@ Model
 
 **Name**: Names uniquely identify an atom. They have a namespace and a title, both of which are strings.
 
-**Edge**: Edges are directed, with an atom at both endpoints. Edges have a string key associated with them. At most one edge between two atoms with a given key may exist.
+**Edge**: Edges are directed, with an atom at both endpoints. Edges have a string label associated with them. At most one edge between two atoms with a given label may exist.
 
-**Tag**: Tags are attached to atoms. They have a kind and a value, both of which are strings.
+**Tag**: Tags are attached to atoms. They have a key and a value, both of which are strings.
 
-**Blob**: Blobs are attached to atoms. They have a type, which is a MIME type, and contents, which is an arbitrarily large binary string.
+**Blob**: Blobs are attached to atoms. They have a kind, which is a string; a type, which is a MIME type; and contents, which are an arbitrarily large binary string. Blobs are referred to by the SHA256 hash of their contents.
 
 Strings are UTF-8 strings, which should be no longer than 256 bytes.
 

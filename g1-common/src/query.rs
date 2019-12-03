@@ -34,7 +34,7 @@ fn fmt_var(s: &str, fmt: &mut Formatter) -> FmtResult {
 /// # use g1_common::query::Value;
 /// assert_eq!("123".parse(), Ok(Value::Int(123)));
 /// assert_eq!("-123".parse(), Ok(Value::Int(-123)));
-/// assert_eq!(r#""hello,\nworld!""#.parse(), Ok(Value::String("hello,\nworld!".to_string())));
+/// assert_eq!(r#""hello,\nworld!""#.parse(), Ok(Value::Str("hello,\nworld!".to_string())));
 /// assert_eq!(r#"game"#.parse(), Ok(Value::Var("game".to_string())));
 /// assert_eq!(r#"'osu!'"#.parse(), Ok(Value::Var("osu!".to_string())));
 /// ```
@@ -275,8 +275,8 @@ impl FromStr for Clause {
 ///                 head: Predicate {
 ///                     name: "edge".to_string(),
 ///                     args: vec![
-///                         Value::String("A".to_string()),
-///                         Value::String("B".to_string()),
+///                         Value::Str("A".to_string()),
+///                         Value::Str("B".to_string()),
 ///                     ],
 ///                 },
 ///                 body: Vec::new(),
@@ -285,8 +285,8 @@ impl FromStr for Clause {
 ///                 head: Predicate {
 ///                     name: "edge".to_string(),
 ///                     args: vec![
-///                         Value::String("A".to_string()),
-///                         Value::String("C".to_string()),
+///                         Value::Str("A".to_string()),
+///                         Value::Str("C".to_string()),
 ///                     ],
 ///                 },
 ///                 body: Vec::new(),
@@ -295,8 +295,8 @@ impl FromStr for Clause {
 ///                 head: Predicate {
 ///                     name: "edge".to_string(),
 ///                     args: vec![
-///                         Value::String("B".to_string()),
-///                         Value::String("C".to_string()),
+///                         Value::Str("B".to_string()),
+///                         Value::Str("C".to_string()),
 ///                     ],
 ///                 },
 ///                 body: Vec::new(),
@@ -340,7 +340,7 @@ impl FromStr for Clause {
 ///         goal: Predicate {
 ///             name: "path".to_string(),
 ///             args: vec![
-///                 Value::String("A".to_string()),
+///                 Value::Str("A".to_string()),
 ///                 Value::Var("X".to_string()),
 ///             ],
 ///         },

@@ -1,15 +1,19 @@
 //! A naive solver for queries.
+//!
+//! This should probably not be used for anything except for very small databases and tests. It can
+//! also serve as a reference implementation to compare against for more optimized versions.
 
-use crate::nameless::{NamelessClause, NamelessQuery, NamelessValue};
-use futures::{never::Never, stream::empty, FutureExt, Stream};
+use crate::nameless::{NamelessClause, NamelessPredicate, NamelessQuery, NamelessValue};
+use futures::{
+    never::Never,
+    prelude::*,
+    stream::{empty, select},
+};
 use std::{collections::HashSet, sync::Arc};
 
 /// Naively solves the given query in a self-contained way (i.e. with all builtin goals failing).
-pub fn naive_solve_selfcontained(
-    limit: Option<usize>,
-    query: &NamelessQuery,
-) -> Vec<Vec<NamelessValue>> {
-    naive_solve(empty(), empty(), empty(), empty(), empty(), limit, query)
+pub fn naive_solve_selfcontained(query: &NamelessQuery) -> Vec<Vec<NamelessValue>> {
+    naive_solve(empty(), empty(), empty(), empty(), empty(), query)
         .now_or_never()
         .unwrap()
         .unwrap_or_else(|e: Never| match e {})
@@ -22,28 +26,121 @@ pub async fn naive_solve<E, PA, PN, PE, PT, PB>(
     pred_edge: PE,
     pred_tag: PT,
     pred_blob: PB,
-    limit: Option<usize>,
     query: &NamelessQuery,
 ) -> Result<Vec<Vec<NamelessValue>>, E>
 where
-    PA: Stream<Item = Vec<Arc<str>>>,
-    PN: Stream<Item = Vec<(Arc<str>, Arc<str>, Arc<str>)>>,
-    PE: Stream<Item = Vec<(Arc<str>, Arc<str>, Arc<str>)>>,
-    PT: Stream<Item = Vec<(Arc<str>, Arc<str>, Arc<str>)>>,
-    PB: Stream<Item = Vec<(Arc<str>, Arc<str>, Arc<str>, Arc<str>)>>,
+    PA: Stream<Item = Result<Arc<str>, E>>,
+    PN: Stream<Item = Result<(Arc<str>, Arc<str>, Arc<str>), E>>,
+    PE: Stream<Item = Result<(Arc<str>, Arc<str>, Arc<str>), E>>,
+    PT: Stream<Item = Result<(Arc<str>, Arc<str>, Arc<str>), E>>,
+    PB: Stream<Item = Result<(Arc<str>, Arc<str>, Arc<str>, Arc<str>), E>>,
 {
-    unimplemented!()
+    // Create a stream of all the builtin predicates.
+    let mut stream = Box::pin(select(
+        select(
+            select(
+                select(
+                    pred_atom.map_ok(|atom| NamelessPredicate {
+                        name: 0,
+                        args: vec![NamelessValue::Str(atom)],
+                    }),
+                    pred_name.map_ok(|(atom, ns, title)| NamelessPredicate {
+                        name: 1,
+                        args: vec![
+                            NamelessValue::Str(atom),
+                            NamelessValue::Str(ns),
+                            NamelessValue::Str(title),
+                        ],
+                    }),
+                ),
+                pred_edge.map_ok(|(from, to, label)| NamelessPredicate {
+                    name: 2,
+                    args: vec![
+                        NamelessValue::Str(from),
+                        NamelessValue::Str(to),
+                        NamelessValue::Str(label),
+                    ],
+                }),
+            ),
+            pred_tag.map_ok(|(atom, key, value)| NamelessPredicate {
+                name: 3,
+                args: vec![
+                    NamelessValue::Str(atom),
+                    NamelessValue::Str(key),
+                    NamelessValue::Str(value),
+                ],
+            }),
+        ),
+        pred_blob.map_ok(|(atom, kind, mime, hash)| NamelessPredicate {
+            name: 4,
+            args: vec![
+                NamelessValue::Str(atom),
+                NamelessValue::Str(kind),
+                NamelessValue::Str(mime),
+                NamelessValue::Str(hash),
+            ],
+        }),
+    ));
+
+    // Construct the model of the query.
+    let mut model = Model {
+        states: (0..5)
+            .map(|_| State::default())
+            .chain(query.clauses.iter().map(|clauses| State {
+                clauses,
+                ..State::default()
+            }))
+            .collect(),
+    };
+
+    // Fill out the facts in the query.
+    for i in 0..model.states.len() {
+        let state = &mut model.states[i];
+        for clause in state.clauses.iter() {
+            if clause.body.is_empty() {
+                assert_eq!(clause.vars, 0);
+                let _ = state.new.insert(clause.args.clone());
+            }
+        }
+
+        model.propagate();
+    }
+
+    // Push each tuple from the stream into the model.
+    while let Some(result) = stream.next().await {
+        let tuple = result?;
+        let _ = model.states[tuple.name as usize].new.insert(tuple.args);
+        model.propagate();
+    }
+
+    unimplemented!("{:?}", model)
 }
 
-/// The state of a query being solved.
+/// The model of a query being solved.
 #[derive(Debug)]
+struct Model<'a> {
+    states: Vec<State<'a>>,
+}
+
+impl<'a> Model<'a> {
+    /// Postconditions:
+    ///
+    ///  - For each state, `union(end.new, end.old) = union(start.new, start.old)`.
+    ///  - For each state, `disjoint(end.new, end.old)`.
+    fn propagate(&mut self) {
+        unimplemented!()
+    }
+}
+
+/// The state of a predicate in the model.
+#[derive(Debug, Default)]
 struct State<'a> {
-    clauses: &'a [NamelessClause],
-}
+    /// The clauses that define the predicate.
+    pub clauses: &'a [NamelessClause],
 
-/// The state of a predicate.
-#[derive(Debug)]
-struct PredState {
+    /// Whether the predicate is frozen; i.e. no more tuples will be added to it.
+    pub frozen: bool,
+
     /// The tuples that were just added.
     pub new: HashSet<Vec<NamelessValue>>,
 

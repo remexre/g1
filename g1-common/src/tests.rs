@@ -39,30 +39,21 @@ fn idempotent_parse_tostring_query_example() {
             Clause {
                 head: Predicate {
                     name: "edge".to_string(),
-                    args: vec![
-                        Value::String("A".to_string()),
-                        Value::String("B".to_string()),
-                    ],
+                    args: vec![Value::Str("A".to_string()), Value::Str("B".to_string())],
                 },
                 body: Vec::new(),
             },
             Clause {
                 head: Predicate {
                     name: "edge".to_string(),
-                    args: vec![
-                        Value::String("A".to_string()),
-                        Value::String("C".to_string()),
-                    ],
+                    args: vec![Value::Str("A".to_string()), Value::Str("C".to_string())],
                 },
                 body: Vec::new(),
             },
             Clause {
                 head: Predicate {
                     name: "edge".to_string(),
-                    args: vec![
-                        Value::String("B".to_string()),
-                        Value::String("C".to_string()),
-                    ],
+                    args: vec![Value::Str("B".to_string()), Value::Str("C".to_string())],
                 },
                 body: Vec::new(),
             },
@@ -96,9 +87,9 @@ fn idempotent_parse_tostring_query_example() {
                 ],
             },
         ],
-        predicate: Predicate {
+        goal: Predicate {
             name: "path".to_string(),
-            args: vec![Value::String("A".to_string()), Value::Var("X".to_string())],
+            args: vec![Value::Str("A".to_string()), Value::Var("X".to_string())],
         },
     };
 
