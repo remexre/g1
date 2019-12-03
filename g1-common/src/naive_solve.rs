@@ -1,117 +1,57 @@
 //! A naive solver for queries.
-//!
-//! This is approximately a miniKanren implementation, actually.
 
-use crate::nameless::{NamelessClause, NamelessPredicate, NamelessQuery, NamelessValue};
-use futures::{
-    future::ok,
-    never::Never,
-    stream::{empty, once},
-    FutureExt, Stream, StreamExt, TryStreamExt,
-};
-use std::{collections::HashMap, pin::Pin};
-
-/// The type of the state being passed between goals.
-#[derive(Clone, Debug)]
-pub struct State {
-    /// The index of the next fresh variable to generate.
-    pub fresh: u32,
-
-    /// The current substitution between variables.
-    pub subst: HashMap<u32, NamelessValue>,
-}
+use crate::nameless::{NamelessClause, NamelessQuery, NamelessValue};
+use futures::{never::Never, stream::empty, FutureExt, Stream};
+use std::{collections::HashSet, sync::Arc};
 
 /// Naively solves the given query in a self-contained way (i.e. with all builtin goals failing).
 pub fn naive_solve_selfcontained(
     limit: Option<usize>,
     query: &NamelessQuery,
 ) -> Vec<Vec<NamelessValue>> {
-    naive_solve(
-        |_, _| empty().boxed(),
-        |_, _, _, _| empty().boxed(),
-        |_, _, _, _| empty().boxed(),
-        |_, _, _, _| empty().boxed(),
-        |_, _, _, _, _| empty().boxed(),
-        limit,
-        query,
-    )
-    .now_or_never()
-    .unwrap()
-    .unwrap_or_else(|e: Never| match e {})
+    naive_solve(empty(), empty(), empty(), empty(), empty(), limit, query)
+        .now_or_never()
+        .unwrap()
+        .unwrap_or_else(|e: Never| match e {})
 }
 
 /// Naively solves the given query.
-pub async fn naive_solve<E, FA, FN, FE, FT, FB>(
-    mut pred_atom: FA,
-    mut pred_name: FN,
-    mut pred_edge: FE,
-    mut pred_tag: FT,
-    mut pred_blob: FB,
+pub async fn naive_solve<E, PA, PN, PE, PT, PB>(
+    pred_atom: PA,
+    pred_name: PN,
+    pred_edge: PE,
+    pred_tag: PT,
+    pred_blob: PB,
     limit: Option<usize>,
     query: &NamelessQuery,
 ) -> Result<Vec<Vec<NamelessValue>>, E>
 where
-    E: 'static + Send,
-    FA: FnMut(NamelessValue, State) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>> + Send,
-    FN: FnMut(
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            State,
-        ) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>>
-        + Send,
-    FE: FnMut(
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            State,
-        ) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>>
-        + Send,
-    FT: FnMut(
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            State,
-        ) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>>
-        + Send,
-    FB: FnMut(
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            State,
-        ) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>>
-        + Send,
+    PA: Stream<Item = Vec<Arc<str>>>,
+    PN: Stream<Item = Vec<(Arc<str>, Arc<str>, Arc<str>)>>,
+    PE: Stream<Item = Vec<(Arc<str>, Arc<str>, Arc<str>)>>,
+    PT: Stream<Item = Vec<(Arc<str>, Arc<str>, Arc<str>)>>,
+    PB: Stream<Item = Vec<(Arc<str>, Arc<str>, Arc<str>, Arc<str>)>>,
 {
-    let argn = query.goal.args.len() as u32;
-    let stream = call(
-        &mut pred_atom,
-        &mut pred_name,
-        &mut pred_edge,
-        &mut pred_tag,
-        &mut pred_blob,
-        &query.clauses,
-        query.goal.name,
-        query.goal.args.clone(),
-        State {
-            fresh: argn,
-            subst: HashMap::new(),
-        },
-    );
-    if let Some(limit) = limit {
-        stream
-            .take(limit)
-            .map_ok(|state| reify(state, argn))
-            .try_collect()
-            .await
-    } else {
-        stream
-            .map_ok(|state| reify(state, argn))
-            .try_collect()
-            .await
-    }
+    unimplemented!()
 }
 
+/// The state of a query being solved.
+#[derive(Debug)]
+struct State<'a> {
+    clauses: &'a [NamelessClause],
+}
+
+/// The state of a predicate.
+#[derive(Debug)]
+struct PredState {
+    /// The tuples that were just added.
+    pub new: HashSet<Vec<NamelessValue>>,
+
+    /// Tuples that have already had their effects processed.
+    pub old: HashSet<Vec<NamelessValue>>,
+}
+
+/*
 fn call<'a, E, FA, FN, FE, FT, FB>(
     pred_atom: &'a mut FA,
     pred_name: &'a mut FN,
@@ -122,39 +62,35 @@ fn call<'a, E, FA, FN, FE, FT, FB>(
     name: u32,
     mut args: Vec<NamelessValue>,
     state: State,
-) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send + 'a>>
+) -> Pin<Box<dyn Stream<Item = Result<State, E>> + 'a>>
 where
-    E: 'static + Send,
-    FA: FnMut(NamelessValue, State) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>> + Send,
+    E: 'static,
+    FA: FnMut(NamelessValue, State) -> Pin<Box<dyn Stream<Item = Result<State, E>>>>,
     FN: FnMut(
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            State,
-        ) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>>
-        + Send,
+        NamelessValue,
+        NamelessValue,
+        NamelessValue,
+        State,
+    ) -> Pin<Box<dyn Stream<Item = Result<State, E>>>>,
     FE: FnMut(
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            State,
-        ) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>>
-        + Send,
+        NamelessValue,
+        NamelessValue,
+        NamelessValue,
+        State,
+    ) -> Pin<Box<dyn Stream<Item = Result<State, E>>>>,
     FT: FnMut(
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            State,
-        ) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>>
-        + Send,
+        NamelessValue,
+        NamelessValue,
+        NamelessValue,
+        State,
+    ) -> Pin<Box<dyn Stream<Item = Result<State, E>>>>,
     FB: FnMut(
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            NamelessValue,
-            State,
-        ) -> Pin<Box<dyn Stream<Item = Result<State, E>> + Send>>
-        + Send,
+        NamelessValue,
+        NamelessValue,
+        NamelessValue,
+        NamelessValue,
+        State,
+    ) -> Pin<Box<dyn Stream<Item = Result<State, E>>>>,
 {
     match name {
         0 => {
@@ -289,3 +225,4 @@ fn unify(l: &NamelessValue, r: &NamelessValue, mut state: State) -> Option<State
         _ => None,
     }
 }
+*/
