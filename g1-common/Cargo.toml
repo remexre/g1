@@ -13,10 +13,10 @@ futures = "0.3.1"
 lalrpop-util = { version = "0.17.2", optional = true }
 logos = { version = "0.9.7", optional = true }
 mime = "0.3.14"
-serde = "1.0.102"
+serde = { version = "1.0.102", features = ["rc"] }
 serde_derive = "1.0.103"
-uuid = "0.8.1"
 topological-sort = "0.1.0"
+uuid = "0.8.1"
 
 [build-dependencies]
 lalrpop = { version = "0.17.2", optional = true }

@@ -1,9 +1,17 @@
+node("A").
+node("B").
+node("C").
+
 edge("A", "B").
 edge("A", "C").
 edge("B", "C").
 
-path(X, X).
+path(X, X) :-
+	node(X).
 path(X, Z) :-
+	node(X),
+	node(Y),
+	node(Z),
     path(X, Y),
     edge(Y, Z).
 

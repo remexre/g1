@@ -12,7 +12,7 @@ Var: String = {
 
 pub Value: Value = {
 	Int => Value::Int(<>.1.parse().unwrap()), // TODO: Shouldn't panic here...
-	String => Value::String(parse_stringish(<>.1)),
+	String => Value::Str(parse_stringish(<>.1)),
 	Var => Value::Var(<>),
 };
 

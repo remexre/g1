@@ -1,5 +1,24 @@
 //! Utilities.
 
+use std::{collections::HashSet, sync::Arc};
+
+#[derive(Debug, Default)]
+pub struct StringPool(HashSet<Arc<str>>);
+
+impl StringPool {
+    /// Stores a string in the pool, returning an `Arc<str>`.
+    pub fn store(&mut self, s: String) -> Arc<str> {
+        let s = Arc::from(s);
+        match self.0.get(&s) {
+            Some(s) => s.clone(),
+            None => {
+                let _ = self.0.insert(s.clone());
+                s
+            }
+        }
+    }
+}
+
 pub mod string {
     //! Serde support via `Display`/`FromStr`.
     //!

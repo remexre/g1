@@ -37,6 +37,7 @@ use lalrpop_util::lalrpop_mod;
 
 #[cfg(feature = "parser")]
 mod lexer;
+pub mod naive_solve;
 pub mod nameless;
 #[cfg(feature = "parser")]
 lalrpop_mod!(parser);
@@ -46,8 +47,9 @@ mod strategies;
 #[cfg(test)]
 mod tests;
 mod utils;
+mod validate;
 
-use crate::{nameless::NamelessQuery, query::Value};
+use crate::nameless::{NamelessQuery, NamelessValue};
 use async_trait::async_trait;
 use bytes::Bytes;
 use derive_more::{Constructor, Display, From, FromStr, Into};
@@ -262,13 +264,16 @@ pub trait Connection: Send + Sync {
     /// Performs a query, returning multiple results (at most `limit`).
     async fn query(
         &self,
-        limit: usize,
-        query: NamelessQuery,
-    ) -> Result<Vec<Vec<Value>>, Self::Error>;
+        limit: Option<usize>,
+        query: &NamelessQuery,
+    ) -> Result<Vec<Vec<NamelessValue>>, Self::Error>;
 
     /// Performs a query, returning at most one result.
-    async fn query_first(&self, query: NamelessQuery) -> Result<Option<Vec<Value>>, Self::Error> {
-        let mut v = self.query(1, query).await?;
+    async fn query_first(
+        &self,
+        query: &NamelessQuery,
+    ) -> Result<Option<Vec<NamelessValue>>, Self::Error> {
+        let mut v = self.query(Some(1), query).await?;
         debug_assert!(v.len() < 2);
         Ok(v.pop())
     }
@@ -276,7 +281,7 @@ pub trait Connection: Send + Sync {
     /// Performs a query, returning whether it had results.
     ///
     /// Note that the default implementation can be inefficient.
-    async fn query_has_results(&self, query: NamelessQuery) -> Result<bool, Self::Error> {
+    async fn query_has_results(&self, query: &NamelessQuery) -> Result<bool, Self::Error> {
         Ok(self.query_first(query).await?.is_some())
     }
 }
@@ -285,6 +290,9 @@ pub trait Connection: Send + Sync {
 pub trait Error: std::error::Error {
     /// Creates an error representing an invalid query.
     fn invalid_query(msg: String) -> Self;
+
+    /// Creates an error representing a syntax error.
+    fn syntax_error(msg: String) -> Self;
 }
 
 /// A newtype around `String` that impls `Error`.
@@ -295,6 +303,10 @@ impl std::error::Error for SimpleError {}
 
 impl Error for SimpleError {
     fn invalid_query(msg: String) -> SimpleError {
+        SimpleError(msg)
+    }
+
+    fn syntax_error(msg: String) -> SimpleError {
         SimpleError(msg)
     }
 }

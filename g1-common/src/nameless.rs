@@ -7,10 +7,11 @@
 
 use crate::{
     query::{Predicate, Query, Value},
+    utils::StringPool,
     Error,
 };
 use serde_derive::{Deserialize, Serialize};
-use std::{collections::HashMap, convert::TryFrom};
+use std::{collections::HashMap, convert::TryFrom, sync::Arc};
 
 /// A nameless representation of values.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -19,17 +20,21 @@ pub enum NamelessValue {
     Int(i64),
 
     /// A string.
-    String(String),
+    Str(Arc<str>),
 
     /// A variable.
     Var(u32),
 }
 
 impl Value {
-    fn to_nameless<E: Error>(self, var_env: &mut Vec<String>) -> Result<NamelessValue, E> {
+    fn to_nameless<E: Error>(
+        self,
+        strings: &mut StringPool,
+        var_env: &mut Vec<String>,
+    ) -> Result<NamelessValue, E> {
         match self {
             Value::Int(n) => Ok(NamelessValue::Int(n)),
-            Value::String(s) => Ok(NamelessValue::String(s)),
+            Value::Str(s) => Ok(NamelessValue::Str(strings.store(s))),
             Value::Var(v) => {
                 let n = var_env.iter().position(|v2| &v == v2).unwrap_or_else(|| {
                     let n = var_env.len();
@@ -45,7 +50,7 @@ impl Value {
 }
 
 /// A nameless representation of predicates.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NamelessPredicate {
     /// The name of the predicate. Note that the names `0`-`4` refer to the builtin predicates
     /// `atom/1`, `name/3`, `edge/3`, `tag/3`, and `blob/4`, respectively.
@@ -58,6 +63,7 @@ pub struct NamelessPredicate {
 impl Predicate {
     fn to_nameless<E: Error>(
         self,
+        strings: &mut StringPool,
         pred_env: &HashMap<(String, usize), u32>,
         var_env: &mut Vec<String>,
     ) -> Result<NamelessPredicate, E> {
@@ -74,7 +80,7 @@ impl Predicate {
         let args = self
             .args
             .into_iter()
-            .map(|v| v.to_nameless(var_env))
+            .map(|v| v.to_nameless(strings, var_env))
             .collect::<Result<_, _>>()?;
         Ok(NamelessPredicate { name, args })
     }
@@ -100,16 +106,17 @@ impl NamelessClause {
     fn from_args_body<E: Error>(
         args: Vec<Value>,
         body: Vec<(bool, Predicate)>,
+        strings: &mut StringPool,
         pred_env: &HashMap<(String, usize), u32>,
     ) -> Result<NamelessClause, E> {
         let mut var_env = Vec::new();
         let args = args
             .into_iter()
-            .map(|v| v.to_nameless(&mut var_env))
+            .map(|v| v.to_nameless(strings, &mut var_env))
             .collect::<Result<_, _>>()?;
         let body = body
             .into_iter()
-            .map(|(n, p)| Ok((n, p.to_nameless(pred_env, &mut var_env)?)))
+            .map(|(n, p)| Ok((n, p.to_nameless(strings, pred_env, &mut var_env)?)))
             .collect::<Result<_, _>>()?;
         let vars = u32::try_from(var_env.len()).map_err(|_| {
             Error::invalid_query(
@@ -134,6 +141,16 @@ pub struct NamelessQuery {
 }
 
 impl NamelessQuery {
+    /// Tries to parse a query, convert it to a `NamelessQuery`, and validate it.
+    pub fn from_str<E: Error>(src: &str) -> Result<NamelessQuery, E> {
+        let query = src
+            .parse::<Query>()
+            .map_err(|err| E::syntax_error(err.to_string()))?;
+        let query = NamelessQuery::from_query(query)?;
+        query.validate()?;
+        Ok(query)
+    }
+
     /// Tries to convert a `Query` to a `NamelessQuery`.
     pub fn from_query<E: Error>(q: Query) -> Result<NamelessQuery, E> {
         // Group the clauses by their functor.
@@ -180,6 +197,7 @@ impl NamelessQuery {
         let mut pred_env_counter = 5;
 
         // Convert the clauses, filling in the predicate environment.
+        let mut strings = StringPool::default();
         let clauses = toposort
             .into_iter()
             .map(|functor| {
@@ -205,14 +223,16 @@ impl NamelessQuery {
                 // Transform each clause
                 clauses
                     .into_iter()
-                    .map(|(args, body)| NamelessClause::from_args_body(args, body, &pred_env))
+                    .map(|(args, body)| {
+                        NamelessClause::from_args_body(args, body, &mut strings, &pred_env)
+                    })
                     .collect()
             })
             .collect::<Result<Vec<Vec<NamelessClause>>, _>>()?;
 
         // Convert the predicate to solve for.
         let mut var_env = Vec::new();
-        let goal = q.goal.to_nameless(&pred_env, &mut var_env)?;
+        let goal = q.goal.to_nameless(&mut strings, &pred_env, &mut var_env)?;
         let goal_vars = u32::try_from(var_env.len())
             .map_err(|_| Error::invalid_query("too many variables used".to_string()))?;
 

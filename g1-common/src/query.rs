@@ -44,7 +44,7 @@ pub enum Value {
     Int(i64),
 
     /// A string.
-    String(String),
+    Str(String),
 
     /// A variable.
     Var(String),
@@ -54,7 +54,7 @@ impl Display for Value {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match self {
             Value::Int(n) => write!(fmt, "{}", n),
-            Value::String(s) => write!(fmt, "{:?}", s),
+            Value::Str(s) => write!(fmt, "{:?}", s),
             Value::Var(v) => fmt_var(v, fmt),
         }
     }
