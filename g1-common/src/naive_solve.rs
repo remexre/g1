@@ -123,12 +123,59 @@ struct Model<'a> {
 }
 
 impl<'a> Model<'a> {
+    /// Preconditions:
+    ///
+    /// 1. At most one state has a non-empty `new`.
+    ///
     /// Postconditions:
     ///
-    ///  - For each state, `union(end.new, end.old) = union(start.new, start.old)`.
-    ///  - For each state, `disjoint(end.new, end.old)`.
+    /// 1. For each state, `end.old = union(start.new, start.old)`.
+    /// 2. For each state, `end.new.is_empty()`.
     fn propagate(&mut self) {
-        unimplemented!()
+        // Get the index of the predicate to start at.
+        let start = self.states.iter().position(|state| !state.new.is_empty());
+        let start = if let Some(start) = start {
+            start
+        } else {
+            // Implicitly we've checked that Precondition 1 holds, since zero states have a
+            // non-empty `new`.
+            //
+            // Postcondition 1 holds, since we didn't modify anything.
+            // Postcondition 2 holds, since all `new`s are empty.
+            return;
+        };
+
+        // Checks precondition 1 on debug builds.
+        cfg_if::cfg_if! {
+            if #[cfg(debug_assertions)] {
+                for state in &self.states[start+1..] {
+                    assert_eq!(&state.new, &HashSet::new());
+                }
+            }
+        }
+
+        // For each predicate that could be affected...
+        for i in start..self.states.len() {
+            let state = &mut self.states[i];
+
+            // Remove `new` items that were already in `old`.
+            // Extra vars to appease borrowck.
+            let old = &mut state.old;
+            let new = &mut state.new;
+            new.retain(|x| !old.contains(x));
+
+            // If there are no longer any `new` options, we can skip further processing as an
+            // optimization.
+            if state.new.is_empty() {
+                continue;
+            }
+
+            for state in &mut self.states[i..] {
+                println!("{:#?}", state);
+            }
+        }
+
+        unimplemented!("{:#?}", &self.states[start])
     }
 }
 
