@@ -8,7 +8,7 @@ use g1_common::{
     query::{Clause, Query},
     Connection,
 };
-use g1_sqlite_connection::SqliteConnection;
+use g1_sqlite_connection::G1SqliteConnection;
 use linefeed::{Interface, ReadResult};
 use std::{collections::BTreeSet, io::Read, path::PathBuf, sync::Arc, thread::spawn};
 use tokio::sync::mpsc;
@@ -27,7 +27,7 @@ fn main(args: Args) -> Result<()> {
             .threaded_scheduler()
             .build()?
             .block_on(async move {
-                let conn = SqliteConnection::open(db_dir).await?;
+                let conn = G1SqliteConnection::open(db_dir).await?;
                 repl(conn).await
             }),
         Subcommand::RunSqlite { db_dir, query_path } => {
@@ -37,7 +37,7 @@ fn main(args: Args) -> Result<()> {
                 .threaded_scheduler()
                 .build()?
                 .block_on(async move {
-                    let conn = SqliteConnection::open(db_dir).await?;
+                    let conn = G1SqliteConnection::open(db_dir).await?;
                     conn.query(None, &query).await
                 })?;
             print_solns(&solns);

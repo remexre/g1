@@ -5,6 +5,8 @@ use g1::Connection;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // TODO: Reenable me
+    /*
     let conn = Connection::open("http://localhost:61616/")?;
 
     conn.create_name(conn.create_atom().await?, "example/readme", "foo")
@@ -38,6 +40,7 @@ async fn main() -> Result<()> {
     conn.create_tag(foo, "letters", "3").await?;
     conn.create_blob(bar, "name again", "text/plain".parse().unwrap(), b"bar")
         .await?;
+    */
 
     Ok(())
 }

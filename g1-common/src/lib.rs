@@ -285,6 +285,11 @@ pub trait Connection: Send + Sync {
         query: &NamelessQuery,
     ) -> Result<Vec<Vec<Arc<str>>>, Self::Error>;
 
+    /// Performs a query, returning all results.
+    async fn query_all(&self, query: &NamelessQuery) -> Result<Vec<Vec<Arc<str>>>, Self::Error> {
+        self.query(None, query).await
+    }
+
     /// Performs a query, returning at most one result.
     async fn query_first(
         &self,
@@ -302,6 +307,8 @@ pub trait Connection: Send + Sync {
         Ok(self.query_first(query).await?.is_some())
     }
 }
+
+static_assertions::assert_obj_safe!(Connection<Error = SimpleError>);
 
 /// The error returned by operations on a G1 server.
 pub trait Error: std::error::Error + Send + Sync + 'static {

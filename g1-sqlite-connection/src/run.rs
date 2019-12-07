@@ -1,4 +1,4 @@
-use crate::{Atom, Command, SqliteConnectionError};
+use crate::{Atom, Command, G1SqliteError};
 use g1_common::naive_solve::naive_solve;
 use log::error;
 use rusqlite::{Connection, NO_PARAMS};
@@ -82,7 +82,7 @@ impl Command {
                     let atoms = tx
                         .prepare("select atom from atoms")?
                         .query_and_then(NO_PARAMS, |row| Ok(Arc::from(row.get::<_, String>(0)?)))?
-                        .collect::<Result<Vec<_>, SqliteConnectionError>>()?;
+                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
 
                     let names = tx
                         .prepare("select atom, ns, title from names")?
@@ -93,7 +93,7 @@ impl Command {
                                 Arc::from(row.get::<_, String>(2)?),
                             ))
                         })?
-                        .collect::<Result<Vec<_>, SqliteConnectionError>>()?;
+                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
 
                     let edges = tx
                         .prepare("select edge_from, edge_to, label from edges")?
@@ -104,7 +104,7 @@ impl Command {
                                 Arc::from(row.get::<_, String>(2)?),
                             ))
                         })?
-                        .collect::<Result<Vec<_>, SqliteConnectionError>>()?;
+                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
 
                     let tags = tx
                         .prepare("select atom, key, value from tags")?
@@ -115,7 +115,7 @@ impl Command {
                                 Arc::from(row.get::<_, String>(2)?),
                             ))
                         })?
-                        .collect::<Result<Vec<_>, SqliteConnectionError>>()?;
+                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
 
                     let blobs = tx
                         .prepare("select atom, kind, mime, hash from blobs")?
@@ -127,7 +127,7 @@ impl Command {
                                 Arc::from(row.get::<_, String>(3)?),
                             ))
                         })?
-                        .collect::<Result<Vec<_>, SqliteConnectionError>>()?;
+                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
 
                     tx.finish()?;
 
@@ -140,9 +140,9 @@ impl Command {
     }
 }
 
-fn with_sender<F, T>(send: Sender<Result<T, SqliteConnectionError>>, func: F)
+fn with_sender<F, T>(send: Sender<Result<T, G1SqliteError>>, func: F)
 where
-    F: FnOnce() -> Result<T, SqliteConnectionError>,
+    F: FnOnce() -> Result<T, G1SqliteError>,
 {
     let _ = send.send(func());
 }

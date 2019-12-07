@@ -63,7 +63,7 @@ use uuid::Uuid;
 ///
 /// TODO: Make this not use `g1_common::naive_solve`...
 #[derive(Debug)]
-pub struct SqliteConnection {
+pub struct G1SqliteConnection {
     join: JoinHandle<()>,
     path: PathBuf,
     send: Mutex<Sender<Command>>,
@@ -100,9 +100,9 @@ create table if not exists blobs
   , constraint blobUnique unique (atom, kind, mime)
   );"#;
 
-impl SqliteConnection {
+impl G1SqliteConnection {
     /// Opens a connection to the database, given a directory to store the database and blobs in.
-    pub async fn open(path: PathBuf) -> Result<SqliteConnection, SqliteConnectionError> {
+    pub async fn open(path: PathBuf) -> Result<G1SqliteConnection, G1SqliteError> {
         create_dir_all(path.join("blobs")).await?;
         create_dir_all(path.join("tmp")).await?;
 
@@ -134,30 +134,30 @@ impl SqliteConnection {
                 }
             }
         });
-        Ok(SqliteConnection {
+        Ok(G1SqliteConnection {
             join,
             path,
             send: Mutex::new(send),
         })
     }
 
-    async fn send_command<F, T>(&self, make_command: F) -> Result<T, SqliteConnectionError>
+    async fn send_command<F, T>(&self, make_command: F) -> Result<T, G1SqliteError>
     where
-        F: FnOnce(oneshot::Sender<Result<T, SqliteConnectionError>>) -> Command,
+        F: FnOnce(oneshot::Sender<Result<T, G1SqliteError>>) -> Command,
     {
         let (send, recv) = oneshot::channel();
         let mut send_send = self.send.lock().await;
         send_send
             .send(make_command(send))
             .await
-            .map_err(|_| SqliteConnectionError::SQLitePanic)?;
-        recv.await.map_err(|_| SqliteConnectionError::SQLitePanic)?
+            .map_err(|_| G1SqliteError::SQLitePanic)?;
+        recv.await.map_err(|_| G1SqliteError::SQLitePanic)?
     }
 }
 
 #[async_trait::async_trait]
-impl Connection for SqliteConnection {
-    type Error = SqliteConnectionError;
+impl Connection for G1SqliteConnection {
+    type Error = G1SqliteError;
 
     async fn create_atom(&self) -> Result<Atom, Self::Error> {
         self.send_command(|send| Command::CreateAtom(send)).await
@@ -320,9 +320,9 @@ impl Connection for SqliteConnection {
     }
 }
 
-/// An error performing an operation on an `SqliteConnection`.
+/// An error performing an operation on an `G1SqliteConnection`.
 #[derive(Debug, Error)]
-pub enum SqliteConnectionError {
+pub enum G1SqliteError {
     /// An I/O error occurred.
     #[error("IO error: {0}")]
     IO(#[from] tokio::io::Error),
@@ -342,8 +342,8 @@ pub enum SqliteConnectionError {
     SQLitePanic,
 }
 
-impl g1_common::Error for SqliteConnectionError {
-    fn invalid_query(msg: String) -> SqliteConnectionError {
-        SqliteConnectionError::InvalidQuery(msg)
+impl g1_common::Error for G1SqliteError {
+    fn invalid_query(msg: String) -> G1SqliteError {
+        G1SqliteError::InvalidQuery(msg)
     }
 }
