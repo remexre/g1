@@ -58,9 +58,6 @@ pub enum Token {
     #[token = "!"]
     Not,
 
-    #[regex = "-?[0-9]+"]
-    Int,
-
     #[regex = "\"([^'\"\\\\]|\\\\[trn'\"\\\\])*\""]
     String,
 

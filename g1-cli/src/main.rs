@@ -16,7 +16,7 @@ fn main(args: Args) -> Result<()> {
             let solns = naive_solve_selfcontained(&query);
             println!("Found {} solutions:", solns.len());
             for soln in solns {
-                dbg!(soln);
+                println!("{:?}", soln);
             }
             Ok(())
         }

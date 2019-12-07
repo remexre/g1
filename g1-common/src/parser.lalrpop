@@ -11,7 +11,6 @@ Var: String = {
 };
 
 pub Value: Value = {
-	Int => Value::Int(<>.1.parse().unwrap()), // TODO: Shouldn't panic here...
 	String => Value::Str(parse_stringish(<>.1)),
 	Var => Value::Var(<>),
 };
@@ -87,7 +86,6 @@ extern {
 		"?-" => (Token::Query, _),
 		":-" => (Token::Turnstile, _),
 		"!" => (Token::Not, _),
-		Int => (Token::Int, _),
 		String => (Token::String, _),
 		EscapedVar => (Token::EscapedVar, _),
 		UnescapedVar => (Token::Var, _),

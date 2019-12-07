@@ -21,13 +21,17 @@ impl NamelessQuery {
 impl NamelessClause {
     fn validate<E: Error>(&self, pred_num: u32) -> Result<(), E> {
         let mut positivities = vec![false; self.vars as usize];
-        for arg in &self.args {
+        for arg in &self.head {
             arg.validate(true, &mut positivities)?
         }
 
-        for (neg, pred) in &self.body {
-            let max_pred = pred_num - if *neg { 1 } else { 0 };
-            pred.validate(max_pred, *neg, &mut positivities)?;
+        for pred in &self.body_pos {
+            let max_pred = pred_num;
+            pred.validate(max_pred, false, &mut positivities)?;
+        }
+        for pred in &self.body_neg {
+            let max_pred = pred_num - 1;
+            pred.validate(max_pred, true, &mut positivities)?;
         }
 
         for (i, positive) in positivities.into_iter().enumerate() {

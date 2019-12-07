@@ -16,9 +16,6 @@ use std::{collections::HashMap, convert::TryFrom, sync::Arc};
 /// A nameless representation of values.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum NamelessValue {
-    /// A signed integer.
-    Int(i64),
-
     /// A string.
     Str(Arc<str>),
 
@@ -33,7 +30,6 @@ impl Value {
         var_env: &mut Vec<String>,
     ) -> Result<NamelessValue, E> {
         match self {
-            Value::Int(n) => Ok(NamelessValue::Int(n)),
             Value::Str(s) => Ok(NamelessValue::Str(strings.store(s))),
             Value::Var(v) => {
                 let n = var_env.iter().position(|v2| &v == v2).unwrap_or_else(|| {
@@ -93,37 +89,48 @@ pub struct NamelessClause {
     pub vars: u32,
 
     /// The arguments to the head predicate of the clause.
-    pub args: Vec<NamelessValue>,
+    pub head: Vec<NamelessValue>,
 
-    /// The body of the clause.
-    ///
-    /// The boolean corresponds to whether the predicate is negated; it is negated when the boolean
-    /// is `true`.
-    pub body: Vec<(bool, NamelessPredicate)>,
+    /// The positive predicates in the body of the clause.
+    pub body_pos: Vec<NamelessPredicate>,
+
+    /// The positive predicates in the body of the clause.
+    pub body_neg: Vec<NamelessPredicate>,
 }
 
 impl NamelessClause {
-    fn from_args_body<E: Error>(
-        args: Vec<Value>,
+    fn from_head_body<E: Error>(
+        head: Vec<Value>,
         body: Vec<(bool, Predicate)>,
         strings: &mut StringPool,
         pred_env: &HashMap<(String, usize), u32>,
     ) -> Result<NamelessClause, E> {
         let mut var_env = Vec::new();
-        let args = args
+        let head = head
             .into_iter()
             .map(|v| v.to_nameless(strings, &mut var_env))
             .collect::<Result<_, _>>()?;
-        let body = body
-            .into_iter()
-            .map(|(n, p)| Ok((n, p.to_nameless(strings, pred_env, &mut var_env)?)))
-            .collect::<Result<_, _>>()?;
+        let mut body_pos = Vec::new();
+        let mut body_neg = Vec::new();
+        for (n, p) in body {
+            let p = p.to_nameless(strings, pred_env, &mut var_env)?;
+            if n {
+                body_neg.push(p);
+            } else {
+                body_pos.push(p);
+            }
+        }
         let vars = u32::try_from(var_env.len()).map_err(|_| {
             Error::invalid_query(
                 "too many variables used (though this should've been caught earlier?)".to_string(),
             )
         })?;
-        Ok(NamelessClause { vars, args, body })
+        Ok(NamelessClause {
+            vars,
+            head,
+            body_pos,
+            body_neg,
+        })
     }
 }
 
@@ -224,7 +231,7 @@ impl NamelessQuery {
                 clauses
                     .into_iter()
                     .map(|(args, body)| {
-                        NamelessClause::from_args_body(args, body, &mut strings, &pred_env)
+                        NamelessClause::from_head_body(args, body, &mut strings, &pred_env)
                     })
                     .collect()
             })

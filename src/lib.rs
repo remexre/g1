@@ -11,7 +11,7 @@
 //!
 //! **Tag**: Tags are attached to atoms. They have a key and a value, both of which are strings.
 //!
-//! **Blob**: Blobs are attached to atoms. They have a kind, which is a string; a type, which is a MIME type; and contents, which are an arbitrarily large binary string. Blobs are referred to by the SHA256 hash of their contents.
+//! **Blob**: Blobs are attached to atoms. They have a kind, which is a string; a type, which is a MIME type; and contents, which are an arbitrarily large binary string. Blobs are referred to by a SHA256 hash.
 //!
 //! Strings are UTF-8 strings, which should be no longer than 256 bytes.
 //!

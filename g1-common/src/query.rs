@@ -32,17 +32,12 @@ fn fmt_var(s: &str, fmt: &mut Formatter) -> FmtResult {
 ///
 /// ```
 /// # use g1_common::query::Value;
-/// assert_eq!("123".parse(), Ok(Value::Int(123)));
-/// assert_eq!("-123".parse(), Ok(Value::Int(-123)));
 /// assert_eq!(r#""hello,\nworld!""#.parse(), Ok(Value::Str("hello,\nworld!".to_string())));
 /// assert_eq!(r#"game"#.parse(), Ok(Value::Var("game".to_string())));
 /// assert_eq!(r#"'osu!'"#.parse(), Ok(Value::Var("osu!".to_string())));
 /// ```
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum Value {
-    /// A signed integer.
-    Int(i64),
-
     /// A string.
     Str(String),
 
@@ -53,7 +48,6 @@ pub enum Value {
 impl Display for Value {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match self {
-            Value::Int(n) => write!(fmt, "{}", n),
             Value::Str(s) => write!(fmt, "{:?}", s),
             Value::Var(v) => fmt_var(v, fmt),
         }
@@ -80,11 +74,11 @@ impl FromStr for Value {
 ///     name: "".to_string(),
 ///     args: Vec::new(),
 /// }));
-/// assert_eq!("'not equal'(1, -2)".parse(), Ok(Predicate {
+/// assert_eq!(r#"'not equal'("one", "two")"#.parse(), Ok(Predicate {
 ///     name: "not equal".to_string(),
 ///     args: vec![
-///         Value::Int(1),
-///         Value::Int(-2),
+///         Value::Str("one".into()),
+///         Value::Str("two".into()),
 ///     ],
 /// }));
 /// ```

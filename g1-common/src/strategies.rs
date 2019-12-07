@@ -13,14 +13,12 @@ const STRING_REGEX: &'static str = "[ -~]*";
 impl Arbitrary for Value {
     type Parameters = ();
     type Strategy = LazyTupleUnion<(
-        WA<Map<<i64 as Arbitrary>::Strategy, fn(i64) -> Value>>,
         WA<Map<&'static str, fn(String) -> Value>>,
         WA<Map<&'static str, fn(String) -> Value>>,
     )>;
 
     fn arbitrary_with((): ()) -> Self::Strategy {
         prop_oneof![
-            any::<i64>().prop_map(Value::Int),
             STRING_REGEX.prop_map(Value::Str),
             STRING_REGEX.prop_map(Value::Var),
         ]
