@@ -16,7 +16,6 @@
     plugin_as_library,
     private_in_public,
     safe_extern_statics,
-    trivial_casts,
     trivial_numeric_casts,
     unconditional_recursion,
     unions_with_drop_fields,

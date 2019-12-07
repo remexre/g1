@@ -94,6 +94,8 @@ where
     };
 
     // Fill out the facts in the query.
+    //
+    // TODO: Is this wanted/needed?
     for i in 0..model.states.len() {
         let state = &mut model.states[i];
         for clause in state.clauses.iter() {
@@ -113,7 +115,18 @@ where
         model.propagate();
     }
 
-    unimplemented!("{:?}", model)
+    // Freeze all the streamed predicates, then propagate again to solve clauses that involve
+    // negation.
+    for i in 0..=4 {
+        model.states[i].frozen = true;
+    }
+    model.propagate();
+
+    // TODO: Finish.
+    for (i, state) in model.states.iter().enumerate() {
+        eprintln!("{}: {:#?}", i, state.old);
+    }
+    unimplemented!()
 }
 
 /// The model of a query being solved.
@@ -123,14 +136,6 @@ struct Model<'a> {
 }
 
 impl<'a> Model<'a> {
-    /// Preconditions:
-    ///
-    /// 1. At most one state has a non-empty `new`.
-    ///
-    /// Postconditions:
-    ///
-    /// 1. For each state, `end.old = union(start.new, start.old)`.
-    /// 2. For each state, `end.new.is_empty()`.
     fn propagate(&mut self) {
         // Get the index of the predicate to start at.
         let start = self.states.iter().position(|state| !state.new.is_empty());
@@ -139,43 +144,84 @@ impl<'a> Model<'a> {
         } else {
             // Implicitly we've checked that Precondition 1 holds, since zero states have a
             // non-empty `new`.
-            //
-            // Postcondition 1 holds, since we didn't modify anything.
-            // Postcondition 2 holds, since all `new`s are empty.
             return;
         };
 
-        // Checks precondition 1 on debug builds.
-        cfg_if::cfg_if! {
-            if #[cfg(debug_assertions)] {
-                for state in &self.states[start+1..] {
-                    assert_eq!(&state.new, &HashSet::new());
-                }
-            }
-        }
-
-        // For each predicate that could be affected...
+        // Derive as many things as possible.
         for i in start..self.states.len() {
-            let state = &mut self.states[i];
+            // Sweep through all the clauses of the predicate. As long as new tuples keep being
+            // generated, keep iterating.
+            loop {
+                // The tuples that were generated this iteration.
+                let mut iter_tuples = Vec::new();
+
+                let state = &self.states[i];
+                'clauses: for clause in state.clauses {
+                    // If the clause contains the negation of a non-frozen predicate, it cannot
+                    // yet generate tuples.
+                    for (neg, pred) in &clause.body {
+                        if *neg && !self.states[pred.name as usize].frozen {
+                            continue 'clauses;
+                        }
+                    }
+
+                    // Compute new tuples.
+                    iter_tuples.extend(self.clause_satisfiable(dbg!(clause)));
+                }
+
+                // Prune tuples that have already been added to `old` or `new`.
+                iter_tuples.retain(|x| !state.old.contains(x) && !state.new.contains(x));
+
+                // If no new tuples have been added, stop iterating.
+                if iter_tuples.is_empty() {
+                    break;
+                }
+
+                // Otherwise, add the tuples to new, and keep iterating.
+                self.states[i].new.extend(iter_tuples);
+            }
 
             // Remove `new` items that were already in `old`.
             // Extra vars to appease borrowck.
+            let state = &mut self.states[i];
             let old = &mut state.old;
             let new = &mut state.new;
+            // TODO: Is it even possible to have `new` items that are in `old`, given the pruning
+            // above? Adding a check to test...
+            if let Some(tuple) = new.iter().filter(|x| old.contains(x as &[_])).next() {
+                eprintln!("new had an tuple in old: {:?}", tuple);
+            }
             new.retain(|x| !old.contains(x));
-
-            // If there are no longer any `new` options, we can skip further processing as an
-            // optimization.
-            if state.new.is_empty() {
-                continue;
-            }
-
-            for state in &mut self.states[i..] {
-                println!("{:#?}", state);
-            }
         }
 
-        unimplemented!("{:#?}", &self.states[start])
+        // Finally, move all the new tuples to old.
+        for state in &mut self.states[start..] {
+            state.old.extend(state.new.drain());
+        }
+    }
+
+    /// Returns all the tuples derivable from the given clause.
+    fn clause_satisfiable(&self, clause: &NamelessClause) -> Vec<Vec<NamelessValue>> {
+        // If none of the predicates in a positive position have new tuples, we should quit early.
+        let all_old = clause
+            .body
+            .iter()
+            .all(|(_, pred)| self.states[pred.name as usize].new.is_empty());
+        if all_old {
+            return Vec::new();
+        }
+
+        let mut out = Vec::new();
+
+        loop {
+            let vars = (0..clause.vars).map(NamelessValue::Var).collect::<Vec<_>>();
+
+            // TODO: this is just so there's no dead vars
+            out.push(vars);
+            break;
+        }
+
+        out
     }
 }
 
