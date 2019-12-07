@@ -1,7 +1,11 @@
-//! Utilities.
+//! Utilities. These are unstable, don't depend on these.
 
-use std::{collections::HashSet, sync::Arc};
+use bytes::Bytes;
+use futures::prelude::*;
+use std::{collections::HashSet, path::Path, pin::Pin, sync::Arc};
+use tokio::{fs::File, io::AsyncRead};
 
+/// A pool for deduplicating strings.
 #[derive(Debug, Default)]
 pub struct StringPool(HashSet<Arc<str>>);
 
@@ -17,6 +21,23 @@ impl StringPool {
             }
         }
     }
+}
+
+/// Reads a file as a stream of chunks.
+pub async fn file_to_stream<P: AsRef<Path>>(
+    path: P,
+) -> Result<impl Stream<Item = Result<Bytes, tokio::io::Error>>, tokio::io::Error> {
+    let mut file = File::open(path).await?;
+    Ok(stream::poll_fn(move |cx| {
+        let mut buf = [0; 1024];
+        Pin::new(&mut file)
+            .poll_read(cx, &mut buf)
+            .map(move |r| match r {
+                Ok(0) => None,
+                Ok(n) => Some(Ok(Bytes::copy_from_slice(&buf[..n]))),
+                Err(e) => Some(Err(e.into())),
+            })
+    }))
 }
 
 pub mod string {

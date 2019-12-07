@@ -47,7 +47,7 @@ pub mod query;
 mod strategies;
 #[cfg(test)]
 mod tests;
-mod utils;
+pub mod utils;
 mod validate;
 
 use crate::nameless::NamelessQuery;

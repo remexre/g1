@@ -1,4 +1,4 @@
-use crate::{Atom, Command, G1SqliteError};
+use crate::{Atom, Command, SqliteError};
 use g1_common::naive_solve::naive_solve;
 use log::error;
 use rusqlite::{Connection, NO_PARAMS};
@@ -73,7 +73,15 @@ impl Command {
             }
             Command::DeleteTag(_atom, _key, _send) => error!("TODO"),
             Command::CreateBlob(_atom, _kind, _mime, _hash, true, _send) => error!("TODO"),
-            Command::CreateBlob(_atom, _kind, _mime, _hash, false, _send) => error!("TODO"),
+            Command::CreateBlob(atom, kind, mime, hash, false, send) => {
+                with_sender(send, move || {
+                    let _ = conn.execute(
+                        "insert into blobs values (?, ?, ?, ?)",
+                        &[atom.to_string(), kind, mime.to_string(), hash.to_string()],
+                    )?;
+                    Ok(false)
+                });
+            }
             Command::DeleteBlob(_atom, _kind, _mime, _send) => error!("TODO"),
             Command::Query(limit, query, send) => {
                 with_sender(send, move || {
@@ -82,7 +90,7 @@ impl Command {
                     let atoms = tx
                         .prepare("select atom from atoms")?
                         .query_and_then(NO_PARAMS, |row| Ok(Arc::from(row.get::<_, String>(0)?)))?
-                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
+                        .collect::<Result<Vec<_>, SqliteError>>()?;
 
                     let names = tx
                         .prepare("select atom, ns, title from names")?
@@ -93,7 +101,7 @@ impl Command {
                                 Arc::from(row.get::<_, String>(2)?),
                             ))
                         })?
-                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
+                        .collect::<Result<Vec<_>, SqliteError>>()?;
 
                     let edges = tx
                         .prepare("select edge_from, edge_to, label from edges")?
@@ -104,7 +112,7 @@ impl Command {
                                 Arc::from(row.get::<_, String>(2)?),
                             ))
                         })?
-                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
+                        .collect::<Result<Vec<_>, SqliteError>>()?;
 
                     let tags = tx
                         .prepare("select atom, key, value from tags")?
@@ -115,7 +123,7 @@ impl Command {
                                 Arc::from(row.get::<_, String>(2)?),
                             ))
                         })?
-                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
+                        .collect::<Result<Vec<_>, SqliteError>>()?;
 
                     let blobs = tx
                         .prepare("select atom, kind, mime, hash from blobs")?
@@ -127,7 +135,7 @@ impl Command {
                                 Arc::from(row.get::<_, String>(3)?),
                             ))
                         })?
-                        .collect::<Result<Vec<_>, G1SqliteError>>()?;
+                        .collect::<Result<Vec<_>, SqliteError>>()?;
 
                     tx.finish()?;
 
@@ -140,9 +148,9 @@ impl Command {
     }
 }
 
-fn with_sender<F, T>(send: Sender<Result<T, G1SqliteError>>, func: F)
+fn with_sender<F, T>(send: Sender<Result<T, SqliteError>>, func: F)
 where
-    F: FnOnce() -> Result<T, G1SqliteError>,
+    F: FnOnce() -> Result<T, SqliteError>,
 {
     let _ = send.send(func());
 }

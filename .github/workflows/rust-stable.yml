@@ -24,5 +24,6 @@ jobs:
 
     - name: Run examples
       run: |
+        cargo +stable run --all-features --example blobs --verbose
         cargo +stable run --all-features --example macro --verbose
         cargo +stable run --all-features --example readme --verbose

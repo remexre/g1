@@ -35,9 +35,10 @@ mod cmd;
 mod run;
 
 use crate::cmd::Command;
-use bytes::BytesMut;
 use futures::{executor::block_on, prelude::*};
-use g1_common::{nameless::NamelessQuery, Atom, Bytes, Connection, Hash, Mime};
+use g1_common::{
+    nameless::NamelessQuery, utils::file_to_stream, Atom, Bytes, Connection, Hash, Mime,
+};
 use sha2::{Digest, Sha256};
 use std::{
     os::unix::ffi::OsStrExt,
@@ -49,7 +50,6 @@ use std::{
 use thiserror::Error;
 use tokio::{
     fs::{create_dir_all, rename, File},
-    io::AsyncRead,
     prelude::*,
     sync::{
         mpsc::{channel, Sender},
@@ -63,7 +63,7 @@ use uuid::Uuid;
 ///
 /// TODO: Make this not use `g1_common::naive_solve`...
 #[derive(Debug)]
-pub struct G1SqliteConnection {
+pub struct SqliteConnection {
     join: JoinHandle<()>,
     path: PathBuf,
     send: Mutex<Sender<Command>>,
@@ -100,9 +100,9 @@ create table if not exists blobs
   , constraint blobUnique unique (atom, kind, mime)
   );"#;
 
-impl G1SqliteConnection {
+impl SqliteConnection {
     /// Opens a connection to the database, given a directory to store the database and blobs in.
-    pub async fn open(path: PathBuf) -> Result<G1SqliteConnection, G1SqliteError> {
+    pub async fn open(path: PathBuf) -> Result<SqliteConnection, SqliteError> {
         create_dir_all(path.join("blobs")).await?;
         create_dir_all(path.join("tmp")).await?;
 
@@ -134,30 +134,30 @@ impl G1SqliteConnection {
                 }
             }
         });
-        Ok(G1SqliteConnection {
+        Ok(SqliteConnection {
             join,
             path,
             send: Mutex::new(send),
         })
     }
 
-    async fn send_command<F, T>(&self, make_command: F) -> Result<T, G1SqliteError>
+    async fn send_command<F, T>(&self, make_command: F) -> Result<T, SqliteError>
     where
-        F: FnOnce(oneshot::Sender<Result<T, G1SqliteError>>) -> Command,
+        F: FnOnce(oneshot::Sender<Result<T, SqliteError>>) -> Command,
     {
         let (send, recv) = oneshot::channel();
         let mut send_send = self.send.lock().await;
         send_send
             .send(make_command(send))
             .await
-            .map_err(|_| G1SqliteError::SQLitePanic)?;
-        recv.await.map_err(|_| G1SqliteError::SQLitePanic)?
+            .map_err(|_| SqliteError::SQLitePanic)?;
+        recv.await.map_err(|_| SqliteError::SQLitePanic)?
     }
 }
 
 #[async_trait::async_trait]
-impl Connection for G1SqliteConnection {
-    type Error = G1SqliteError;
+impl Connection for SqliteConnection {
+    type Error = SqliteError;
 
     async fn create_atom(&self) -> Result<Atom, Self::Error> {
         self.send_command(|send| Command::CreateAtom(send)).await
@@ -241,18 +241,7 @@ impl Connection for G1SqliteConnection {
         path.push("blobs");
         path.push(hash.to_string());
 
-        let mut file = File::open(path).await?;
-        Ok(stream::poll_fn(move |cx| {
-            let mut buf = BytesMut::new();
-            Pin::new(&mut file)
-                .poll_read(cx, &mut buf)
-                .map(|r| match r {
-                    Ok(0) => None,
-                    Ok(_) => Some(Ok(buf.freeze())),
-                    Err(e) => Some(Err(e.into())),
-                })
-        })
-        .boxed())
+        Ok(file_to_stream(path).await?.map_err(|e| e.into()).boxed())
     }
 
     async fn store_blob(
@@ -287,7 +276,7 @@ impl Connection for G1SqliteConnection {
             unsafe {
                 let errno = libc::__errno_location();
 
-                let fd = libc::open(path, libc::O_DIRECTORY | libc::O_RDONLY);
+                let fd = libc::open(path, libc::O_RDONLY);
                 if fd == -1 {
                     return Err(*errno);
                 }
@@ -320,9 +309,9 @@ impl Connection for G1SqliteConnection {
     }
 }
 
-/// An error performing an operation on an `G1SqliteConnection`.
+/// An error performing an operation on an `SqliteConnection`.
 #[derive(Debug, Error)]
-pub enum G1SqliteError {
+pub enum SqliteError {
     /// An I/O error occurred.
     #[error("IO error: {0}")]
     IO(#[from] tokio::io::Error),
@@ -342,8 +331,8 @@ pub enum G1SqliteError {
     SQLitePanic,
 }
 
-impl g1_common::Error for G1SqliteError {
-    fn invalid_query(msg: String) -> G1SqliteError {
-        G1SqliteError::InvalidQuery(msg)
+impl g1_common::Error for SqliteError {
+    fn invalid_query(msg: String) -> SqliteError {
+        SqliteError::InvalidQuery(msg)
     }
 }
