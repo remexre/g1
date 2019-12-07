@@ -1,9 +1,17 @@
 use crate::{
+	command::Command,
 	lexer::{parse_stringish, Token},
 	query::{Clause, Predicate, Query, Value},
 };
 
 grammar<'src>;
+
+U32: u32 = U32Tok =>? {
+	<>.1.parse().map_err(|e: std::num::ParseIntError| {
+		lalrpop_util::ParseError::User { error: e.to_string() }
+	})
+};
+String: String = StringTok => parse_stringish(<>.1);
 
 Var: String = {
 	EscapedVar => parse_stringish(<>.1),
@@ -11,7 +19,7 @@ Var: String = {
 };
 
 pub Value: Value = {
-	String => Value::Str(parse_stringish(<>.1)),
+	String => Value::Str(<>),
 	Var => Value::Var(<>),
 };
 
@@ -77,16 +85,89 @@ pub Query: Query = {
 	<clauses: Clauses> "?-" <goal: Predicate> "." => Query { clauses, goal },
 };
 
+pub Command: Command = {
+	<Clause> => Command::Clause(<>),
+
+	".create_atom" => Command::CreateAtom,
+	".delete_atom" <atom: String> => Command::DeleteAtom(atom),
+
+	".create_name" <atom: String> <ns: String> <title: String> => {
+		Command::CreateName(atom, ns, title, false)
+	},
+	".delete_name" <ns: String> <title: String> => Command::DeleteName(ns, title),
+	".upsert_name" <atom: String> <ns: String> <title: String> => {
+		Command::CreateName(atom, ns, title, true)
+	},
+
+	".create_edge" <from: String> <to: String> <label: String> => {
+		Command::CreateEdge(from, to, label)
+	},
+	".delete_edge" <from: String> <to: String> <label: String> => {
+		Command::DeleteEdge(from, to, label)
+	},
+	".upsert_edge" <from: String> <to: String> <label: String> => {
+		Command::CreateEdge(from, to, label)
+	},
+
+	".create_tag" <atom: String> <key: String> <value: String> => {
+		Command::CreateTag(atom, key, value, false)
+	},
+	".delete_tag" <atom: String> <key: String> => {
+		Command::DeleteTag(atom, key)
+	},
+	".upsert_tag" <atom: String> <key: String> <value: String> => {
+		Command::CreateTag(atom, key, value, true)
+	},
+
+	".create_blob" <atom: String> <kind: String> <mime: String> <hash: String> => {
+		Command::CreateBlob(atom, kind, mime, hash, false)
+	},
+	".delete_blob" <atom: String> <kind: String> <mime: String> => {
+		Command::DeleteBlob(atom, kind, mime)
+	},
+	".upsert_blob" <atom: String> <kind: String> <mime: String> <hash: String> => {
+		Command::CreateBlob(atom, kind, mime, hash, true)
+	},
+
+	"?-" <Predicate> "." => Command::Query(<>),
+    ".help" => Command::Help,
+    ".list" => Command::List,
+	".quit" => Command::Quit,
+	".undefine" <name: Var> "/" <argn: U32> => Command::Undefine(name, argn),
+};
+
 extern {
+	type Error = String;
+
 	enum (Token, &'src str) {
 		")" => (Token::ParenClose, _),
 		"(" => (Token::ParenOpen, _),
 		"." => (Token::Period, _),
 		"," => (Token::Comma, _),
+		"/" => (Token::Slash, _),
 		"?-" => (Token::Query, _),
 		":-" => (Token::Turnstile, _),
 		"!" => (Token::Not, _),
-		String => (Token::String, _),
+		".create_atom" => (Token::DotCreateAtom, _),
+		".delete_atom" => (Token::DotDeleteAtom, _),
+		".create_name" => (Token::DotCreateName, _),
+		".delete_name" => (Token::DotDeleteName, _),
+		".upsert_name" => (Token::DotUpsertName, _),
+		".create_edge" => (Token::DotCreateEdge, _),
+		".delete_edge" => (Token::DotDeleteEdge, _),
+		".upsert_edge" => (Token::DotUpsertEdge, _),
+		".create_tag" => (Token::DotCreateTag, _),
+		".delete_tag" => (Token::DotDeleteTag, _),
+		".upsert_tag" => (Token::DotUpsertTag, _),
+		".create_blob" => (Token::DotCreateBlob, _),
+		".delete_blob" => (Token::DotDeleteBlob, _),
+		".upsert_blob" => (Token::DotUpsertBlob, _),
+		".help" => (Token::DotHelp, _),
+		".list" => (Token::DotList, _),
+		".quit" => (Token::DotQuit, _),
+		".undefine" => (Token::DotUndefine, _),
+		U32Tok => (Token::U32, _),
+		StringTok => (Token::String, _),
 		EscapedVar => (Token::EscapedVar, _),
 		UnescapedVar => (Token::Var, _),
 	}

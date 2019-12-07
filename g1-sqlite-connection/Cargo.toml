@@ -1,0 +1,24 @@
+[package]
+authors = ["Nathan Ringo <nathan@remexre.xyz>"]
+description = "A G1 connection based on an SQLite database, using the FS for blobs."
+edition = "2018"
+name = "g1-sqlite-connection"
+version = "0.1.0-alpha.3"
+
+[dependencies]
+async-trait = "0.1.21"
+bytes = "0.5.2"
+derivative = "1.0.3"
+futures = "0.3.1"
+g1-common = { path = "../g1-common" }
+log = "0.4.8"
+rusqlite = "0.20.0"
+thiserror = "1.0.9"
+uuid = { version = "0.8.1", features = ["v4"] }
+sha2 = "0.8.0"
+libc = "0.2.66"
+
+[dependencies.tokio]
+default-features = false
+features = ["blocking", "fs", "io-util", "sync", "rt-threaded"]
+version = "0.2.4"

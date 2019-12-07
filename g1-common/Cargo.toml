@@ -6,13 +6,13 @@ name = "g1-common"
 version = "0.1.0-alpha.3"
 
 [dependencies]
-async-trait = "0.1.19"
+async-trait = "0.1.21"
 bytes = "0.5.2"
 cfg-if = "0.1.10"
 derive_more = "0.99.2"
 futures = "0.3.1"
-lalrpop-util = { version = "0.17.2", optional = true }
-logos = { version = "0.9.7", optional = true }
+lalrpop-util = "0.17.2"
+logos = "0.9.7"
 mime = "0.3.14"
 serde = { version = "1.0.102", features = ["rc"] }
 serde_derive = "1.0.103"
@@ -20,13 +20,8 @@ topological-sort = "0.1.0"
 uuid = "0.8.1"
 
 [build-dependencies]
-lalrpop = { version = "0.17.2", optional = true }
+lalrpop = "0.17.2"
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
 proptest = "0.9.4"
-
-[features]
-default = ["parser"]
-parser = ["lalrpop", "lalrpop-util", "logos"]
-solver = []

@@ -1,15 +1,12 @@
 //! G1's query language, which is a Datalog variant.
 
-#[cfg(feature = "parser")]
 use crate::{
     lexer::Lexer,
     parser::{ClauseParser, PredicateParser, QueryParser, ValueParser},
 };
-#[cfg(feature = "parser")]
 use lalrpop_util::ParseError;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result as FmtResult};
-#[cfg(feature = "parser")]
 use std::str::FromStr;
 
 fn fmt_var(s: &str, fmt: &mut Formatter) -> FmtResult {
@@ -54,9 +51,8 @@ impl Display for Value {
     }
 }
 
-#[cfg(feature = "parser")]
 impl FromStr for Value {
-    type Err = ParseError<String, String, &'static str>;
+    type Err = ParseError<String, String, String>;
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         ValueParser::new().parse(Lexer::new(src)).map_err(|err| {
@@ -108,9 +104,8 @@ impl Display for Predicate {
     }
 }
 
-#[cfg(feature = "parser")]
 impl FromStr for Predicate {
-    type Err = ParseError<String, String, &'static str>;
+    type Err = ParseError<String, String, String>;
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         PredicateParser::new()
@@ -234,9 +229,8 @@ impl Display for Clause {
     }
 }
 
-#[cfg(feature = "parser")]
 impl FromStr for Clause {
-    type Err = ParseError<String, String, &'static str>;
+    type Err = ParseError<String, String, String>;
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         ClauseParser::new().parse(Lexer::new(src)).map_err(|err| {
@@ -359,9 +353,8 @@ impl Display for Query {
     }
 }
 
-#[cfg(feature = "parser")]
 impl FromStr for Query {
-    type Err = ParseError<String, String, &'static str>;
+    type Err = ParseError<String, String, String>;
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         QueryParser::new().parse(Lexer::new(src)).map_err(|err| {

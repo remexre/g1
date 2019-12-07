@@ -8,24 +8,25 @@ use std::{collections::HashSet, iter::once, sync::Arc};
 
 /// Naively solves the given query in a self-contained way (i.e. with all builtin goals failing).
 pub fn naive_solve_selfcontained(query: &NamelessQuery) -> Vec<Vec<Arc<str>>> {
-    naive_solve(&[], &[], &[], &[], &[], query)
+    naive_solve(&[], &[], &[], &[], &[], None, query)
 }
 
 /// Naively solves the given query.
 ///
 /// TODO: prose
 ///
-/// `atoms`: `atom`
-/// `names`: `atom, namespace, title`
-/// `edges`: `to, from, label`
-/// `tags`: `atom, key, value`
-/// `blobs`: `atom, kind, mime, hash`
+/// - `atoms`: `atom`
+/// - `names`: `atom, namespace, title`
+/// - `edges`: `to, from, label`
+/// - `tags`: `atom, key, value`
+/// - `blobs`: `atom, kind, mime, hash`
 pub fn naive_solve(
     atoms: &[Arc<str>],
     names: &[(Arc<str>, Arc<str>, Arc<str>)],
     edges: &[(Arc<str>, Arc<str>, Arc<str>)],
     tags: &[(Arc<str>, Arc<str>, Arc<str>)],
     blobs: &[(Arc<str>, Arc<str>, Arc<str>, Arc<str>)],
+    limit: Option<usize>,
     query: &NamelessQuery,
 ) -> Vec<Vec<Arc<str>>> {
     let mut tuples = vec![HashSet::new(); query.clauses.len() + 5];
@@ -74,7 +75,7 @@ pub fn naive_solve(
     }
 
     // Grab the tuples of the goal.
-    tuples
+    let iter = tuples
         .remove(query.goal.name as usize)
         .into_iter()
         .filter(|tuple| {
@@ -85,8 +86,12 @@ pub fn naive_solve(
                     NamelessValue::Str(s) => s == val,
                     NamelessValue::Var(_) => true,
                 })
-        })
-        .collect()
+        });
+    if let Some(limit) = limit {
+        iter.take(limit).collect()
+    } else {
+        iter.collect()
+    }
 }
 
 fn compute_new_tuples(

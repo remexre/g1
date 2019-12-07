@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "g1-cli", "g1-common", "g1-server", "g1d"]
+members = [".", "g1-cli", "g1-common", "g1-server", "g1-sqlite-connection", "g1d"]
 
 [package]
 authors = ["Nathan Ringo <nathan@remexre.xyz>"]
@@ -21,11 +21,11 @@ log = "0.4.8"
 mime = "0.3.14"
 serde = "1.0.102"
 serde_derive = "1.0.103"
-serde_json = "1.0.42"
-tokio = "0.2.2"
+serde_json = "1.0.44"
+tokio = "0.2.4"
 url = "2.1.0"
 uuid = "0.8.1"
 
 [dev-dependencies]
 anyhow = "1.0.25"
-tokio = { version = "0.2.2", features = ["macros"] }
+# tokio = { version = "0.2.2", features = ["macros"] }

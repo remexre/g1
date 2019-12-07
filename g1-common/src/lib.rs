@@ -31,14 +31,12 @@
     while_true
 )]
 
-#[cfg(feature = "parser")]
 use lalrpop_util::lalrpop_mod;
 
-#[cfg(feature = "parser")]
+pub mod command;
 mod lexer;
 pub mod naive_solve;
 pub mod nameless;
-#[cfg(feature = "parser")]
 lalrpop_mod!(parser);
 pub mod query;
 #[cfg(test)]
@@ -48,16 +46,17 @@ mod tests;
 mod utils;
 mod validate;
 
-use crate::nameless::{NamelessQuery, NamelessValue};
-use async_trait::async_trait;
-use bytes::Bytes;
+use crate::nameless::NamelessQuery;
+pub use bytes::Bytes;
 use derive_more::{Constructor, Display, From, FromStr, Into};
 use futures::prelude::*;
 pub use mime::Mime;
 use serde_derive::{Deserialize, Serialize};
 use std::{
     fmt::{Display, Formatter, Result as FmtResult},
+    pin::Pin,
     str::FromStr,
+    sync::Arc,
 };
 use uuid::Uuid;
 
@@ -86,6 +85,18 @@ pub struct Atom(#[serde(with = "utils::string")] Uuid);
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(transparent)]
 pub struct Hash([u8; 32]);
+
+impl Hash {
+    /// Creates a Hash from a slice. Panics if the slice's length is not 32.
+    pub fn from_bytes(bytes: &[u8]) -> Hash {
+        assert_eq!(bytes.len(), 32);
+        let mut hash = [0; 32];
+        for i in 0..32 {
+            hash[i] = bytes[i];
+        }
+        Hash(hash)
+    }
+}
 
 impl Display for Hash {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
@@ -166,7 +177,7 @@ impl std::error::Error for HashParseError {}
 
 /// The basic interface to a G1 server. This exposes all the operations which must be atomic
 /// without transactions.
-#[async_trait]
+#[async_trait::async_trait]
 pub trait Connection: Send + Sync {
     /// The error returned by operations on this connection.
     type Error: Error;
@@ -252,12 +263,12 @@ pub trait Connection: Send + Sync {
     async fn fetch_blob(
         &self,
         hash: Hash,
-    ) -> Result<Box<dyn Stream<Item = Result<Bytes, Self::Error>> + Send>, Self::Error>;
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<Bytes, Self::Error>> + Send>>, Self::Error>;
 
     /// Stores a blob on the server, returning its hash.
     async fn store_blob(
         &self,
-        data: impl Stream<Item = Result<Bytes, Self::Error>>,
+        data: Pin<Box<dyn Stream<Item = Result<Bytes, Self::Error>> + Send + 'static>>,
     ) -> Result<Hash, Self::Error>;
 
     /// Performs a query, returning multiple results (at most `limit`).
@@ -265,13 +276,13 @@ pub trait Connection: Send + Sync {
         &self,
         limit: Option<usize>,
         query: &NamelessQuery,
-    ) -> Result<Vec<Vec<NamelessValue>>, Self::Error>;
+    ) -> Result<Vec<Vec<Arc<str>>>, Self::Error>;
 
     /// Performs a query, returning at most one result.
     async fn query_first(
         &self,
         query: &NamelessQuery,
-    ) -> Result<Option<Vec<NamelessValue>>, Self::Error> {
+    ) -> Result<Option<Vec<Arc<str>>>, Self::Error> {
         let mut v = self.query(Some(1), query).await?;
         debug_assert!(v.len() < 2);
         Ok(v.pop())
@@ -286,12 +297,9 @@ pub trait Connection: Send + Sync {
 }
 
 /// The error returned by operations on a G1 server.
-pub trait Error: std::error::Error {
+pub trait Error: std::error::Error + Send + Sync + 'static {
     /// Creates an error representing an invalid query.
     fn invalid_query(msg: String) -> Self;
-
-    /// Creates an error representing a syntax error.
-    fn syntax_error(msg: String) -> Self;
 }
 
 /// A newtype around `String` that impls `Error`.
@@ -302,10 +310,6 @@ impl std::error::Error for SimpleError {}
 
 impl Error for SimpleError {
     fn invalid_query(msg: String) -> SimpleError {
-        SimpleError(msg)
-    }
-
-    fn syntax_error(msg: String) -> SimpleError {
         SimpleError(msg)
     }
 }

@@ -37,6 +37,60 @@ pub enum Token {
     #[regex = "%[^\\r\\n]*"]
     Comment,
 
+    #[token = ".create_atom"]
+    DotCreateAtom,
+
+    #[token = ".delete_atom"]
+    DotDeleteAtom,
+
+    #[token = ".create_name"]
+    DotCreateName,
+
+    #[token = ".delete_name"]
+    DotDeleteName,
+
+    #[token = ".upsert_name"]
+    DotUpsertName,
+
+    #[token = ".create_edge"]
+    DotCreateEdge,
+
+    #[token = ".delete_edge"]
+    DotDeleteEdge,
+
+    #[token = ".upsert_edge"]
+    DotUpsertEdge,
+
+    #[token = ".create_tag"]
+    DotCreateTag,
+
+    #[token = ".delete_tag"]
+    DotDeleteTag,
+
+    #[token = ".upsert_tag"]
+    DotUpsertTag,
+
+    #[token = ".create_blob"]
+    DotCreateBlob,
+
+    #[token = ".delete_blob"]
+    DotDeleteBlob,
+
+    #[token = ".help"]
+    DotHelp,
+
+    #[token = ".list"]
+    DotList,
+
+    #[token = ".upsert_blob"]
+    DotUpsertBlob,
+
+    #[token = ".quit"]
+    DotQuit,
+
+    #[token = ".undefine"]
+    DotUndefine,
+
     #[token = ")"]
     ParenClose,
 
@@ -49,6 +103,9 @@ pub enum Token {
     #[token = ","]
     Comma,
 
+    #[token = "/"]
+    Slash,
+
     #[token = "?-"]
     Query,
 
@@ -60,6 +117,9 @@ pub enum Token {
 
     #[regex = "\"([^'\"\\\\]|\\\\[trn'\"\\\\])*\""]
     String,
+
+    #[regex = "[0-9]+"]
+    U32,
 
     #[regex = "'([^'\"\\\\]|\\\\[trn'\"\\\\])*'"]
     EscapedVar,

@@ -27,16 +27,23 @@ impl Value {
     fn to_nameless<E: Error>(
         self,
         strings: &mut StringPool,
-        var_env: &mut Vec<String>,
+        var_env: &mut Vec<(String, bool)>,
+        positive: bool,
     ) -> Result<NamelessValue, E> {
         match self {
             Value::Str(s) => Ok(NamelessValue::Str(strings.store(s))),
             Value::Var(v) => {
-                let n = var_env.iter().position(|v2| &v == v2).unwrap_or_else(|| {
-                    let n = var_env.len();
-                    var_env.push(v);
-                    n
-                });
+                let n = var_env
+                    .iter()
+                    .position(|(v2, _)| &v == v2)
+                    .unwrap_or_else(|| {
+                        let n = var_env.len();
+                        var_env.push((v, positive));
+                        n
+                    });
+                if positive {
+                    var_env[n].1 = true;
+                }
                 let n = u32::try_from(n)
                     .map_err(|_| Error::invalid_query("too many variables used".to_string()))?;
                 Ok(NamelessValue::Var(n))
@@ -61,7 +68,8 @@ impl Predicate {
         self,
         strings: &mut StringPool,
         pred_env: &HashMap<(String, usize), u32>,
-        var_env: &mut Vec<String>,
+        var_env: &mut Vec<(String, bool)>,
+        positive: bool,
     ) -> Result<NamelessPredicate, E> {
         let name = pred_env
             .get(&(self.name.to_string(), self.args.len()))
@@ -76,14 +84,14 @@ impl Predicate {
         let args = self
             .args
             .into_iter()
-            .map(|v| v.to_nameless(strings, var_env))
+            .map(|v| v.to_nameless(strings, var_env, positive))
             .collect::<Result<_, _>>()?;
         Ok(NamelessPredicate { name, args })
     }
 }
 
 /// A nameless representation of clauses.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NamelessClause {
     /// The number of variables used in the clause.
     pub vars: u32,
@@ -108,23 +116,34 @@ impl NamelessClause {
         let mut var_env = Vec::new();
         let head = head
             .into_iter()
-            .map(|v| v.to_nameless(strings, &mut var_env))
+            .map(|v| v.to_nameless(strings, &mut var_env, false))
             .collect::<Result<_, _>>()?;
         let mut body_pos = Vec::new();
         let mut body_neg = Vec::new();
         for (n, p) in body {
-            let p = p.to_nameless(strings, pred_env, &mut var_env)?;
+            let p = p.to_nameless(strings, pred_env, &mut var_env, !n)?;
             if n {
                 body_neg.push(p);
             } else {
                 body_pos.push(p);
             }
         }
+
+        for (name, pos) in &var_env {
+            if !pos {
+                return Err(Error::invalid_query(format!(
+                    "variable {} never appears in a positive position",
+                    name
+                )));
+            }
+        }
+
         let vars = u32::try_from(var_env.len()).map_err(|_| {
             Error::invalid_query(
                 "too many variables used (though this should've been caught earlier?)".to_string(),
             )
         })?;
+
         Ok(NamelessClause {
             vars,
             head,
@@ -135,7 +154,7 @@ impl NamelessClause {
 }
 
 /// A nameless representation of queries.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NamelessQuery {
     /// The clauses to be used by the query, grouped by predicate, in stratified order.
     pub clauses: Vec<Vec<NamelessClause>>,
@@ -152,7 +171,7 @@ impl NamelessQuery {
     pub fn from_str<E: Error>(src: &str) -> Result<NamelessQuery, E> {
         let query = src
             .parse::<Query>()
-            .map_err(|err| E::syntax_error(err.to_string()))?;
+            .map_err(|err| E::invalid_query(err.to_string()))?;
         let query = NamelessQuery::from_query(query)?;
         query.validate()?;
         Ok(query)
@@ -239,7 +258,9 @@ impl NamelessQuery {
 
         // Convert the predicate to solve for.
         let mut var_env = Vec::new();
-        let goal = q.goal.to_nameless(&mut strings, &pred_env, &mut var_env)?;
+        let goal = q
+            .goal
+            .to_nameless(&mut strings, &pred_env, &mut var_env, false)?;
         let goal_vars = u32::try_from(var_env.len())
             .map_err(|_| Error::invalid_query("too many variables used".to_string()))?;
 
