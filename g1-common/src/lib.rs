@@ -31,13 +31,17 @@
     while_true
 )]
 
-use lalrpop_util::lalrpop_mod;
-
 pub mod command;
 mod lexer;
 pub mod naive_solve;
 pub mod nameless;
-lalrpop_mod!(parser);
+#[allow(unused_parens)] // https://github.com/lalrpop/lalrpop/issues/493
+mod parser {
+    pub use self::parser::*;
+    use lalrpop_util::lalrpop_mod;
+
+    lalrpop_mod!(parser);
+}
 pub mod query;
 #[cfg(test)]
 mod strategies;
