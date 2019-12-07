@@ -40,9 +40,9 @@ pub enum Command {
     /// Prints whether the name existed prior to the call.
     DeleteName(String, String),
 
-    /// Creates a new edge between two atoms. If either of the atoms does not exist, creates them.
+    /// Creates a new edge between two atoms.
     ///
-    /// Prints `true` if an edge already exists with the same endpoints and label.
+    /// Prints whether an edge already exists with the same endpoints and label.
     CreateEdge(String, String, String),
 
     /// Deletes the edge with the given endpoints and label.

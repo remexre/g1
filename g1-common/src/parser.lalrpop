@@ -105,9 +105,6 @@ pub Command: Command = {
 	".delete_edge" <from: String> <to: String> <label: String> => {
 		Command::DeleteEdge(from, to, label)
 	},
-	".upsert_edge" <from: String> <to: String> <label: String> => {
-		Command::CreateEdge(from, to, label)
-	},
 
 	".create_tag" <atom: String> <key: String> <value: String> => {
 		Command::CreateTag(atom, key, value, false)
@@ -155,7 +152,6 @@ extern {
 		".upsert_name" => (Token::DotUpsertName, _),
 		".create_edge" => (Token::DotCreateEdge, _),
 		".delete_edge" => (Token::DotDeleteEdge, _),
-		".upsert_edge" => (Token::DotUpsertEdge, _),
 		".create_tag" => (Token::DotCreateTag, _),
 		".delete_tag" => (Token::DotDeleteTag, _),
 		".upsert_tag" => (Token::DotUpsertTag, _),

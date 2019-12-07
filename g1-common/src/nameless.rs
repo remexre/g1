@@ -179,6 +179,14 @@ impl NamelessQuery {
 
     /// Tries to convert a `Query` to a `NamelessQuery`.
     pub fn from_query<E: Error>(q: Query) -> Result<NamelessQuery, E> {
+        const BUILTINS: &[(&str, usize)] = &[
+            ("atom", 1),
+            ("name", 3),
+            ("edge", 3),
+            ("tag", 3),
+            ("blob", 4),
+        ];
+
         // Group the clauses by their functor.
         let mut all_clauses = HashMap::<_, Vec<_>>::new();
         for clause in q.clauses {
@@ -197,7 +205,7 @@ impl NamelessQuery {
             for (_, body) in clauses {
                 for (_, pred) in body {
                     let callee_functor: (&str, _) = (&pred.name, pred.args.len());
-                    if callee_functor != caller_functor {
+                    if callee_functor != caller_functor && !BUILTINS.contains(&callee_functor) {
                         toposort.add_dependency(callee_functor, caller_functor);
                     }
                 }
@@ -214,12 +222,11 @@ impl NamelessQuery {
         }
 
         // Create the original predicate environment.
-        let mut pred_env = HashMap::new();
-        let _ = pred_env.insert(("atom".to_string(), 1), 0);
-        let _ = pred_env.insert(("name".to_string(), 3), 1);
-        let _ = pred_env.insert(("edge".to_string(), 3), 2);
-        let _ = pred_env.insert(("tag".to_string(), 3), 3);
-        let _ = pred_env.insert(("blob".to_string(), 4), 4);
+        let mut pred_env = BUILTINS
+            .iter()
+            .enumerate()
+            .map(|(i, (name, argn))| ((name.to_string(), *argn), i as u32))
+            .collect::<HashMap<_, _>>();
         let mut pred_env_counter = 5;
 
         // Convert the clauses, filling in the predicate environment.
@@ -231,7 +238,7 @@ impl NamelessQuery {
                     .remove(&(functor.0.to_string(), functor.1))
                     .ok_or_else(|| {
                         E::invalid_query(format!(
-                            "undeclared predicate: {}/{}",
+                            "undeclared predicate after stratification: {}/{}",
                             functor.0, functor.1
                         ))
                     })?;

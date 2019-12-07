@@ -31,8 +31,10 @@
     while_true
 )]
 
+mod cmd;
 mod run;
 
+use crate::cmd::Command;
 use bytes::BytesMut;
 use futures::{executor::block_on, prelude::*};
 use g1_common::{nameless::NamelessQuery, Atom, Bytes, Connection, Hash, Mime};
@@ -344,72 +346,4 @@ impl g1_common::Error for SqliteConnectionError {
     fn invalid_query(msg: String) -> SqliteConnectionError {
         SqliteConnectionError::InvalidQuery(msg)
     }
-}
-
-#[derive(derivative::Derivative)]
-#[derivative(Debug)]
-enum Command {
-    CreateAtom(
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<Atom, SqliteConnectionError>>,
-    ),
-    DeleteAtom(
-        Atom,
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<bool, SqliteConnectionError>>,
-    ),
-    CreateName(
-        Atom,
-        String,
-        String,
-        bool,
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<bool, SqliteConnectionError>>,
-    ),
-    DeleteName(
-        String,
-        String,
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<bool, SqliteConnectionError>>,
-    ),
-    CreateEdge(
-        Atom,
-        Atom,
-        String,
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<bool, SqliteConnectionError>>,
-    ),
-    DeleteEdge(
-        Atom,
-        Atom,
-        String,
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<bool, SqliteConnectionError>>,
-    ),
-    CreateTag(
-        Atom,
-        String,
-        String,
-        bool,
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<bool, SqliteConnectionError>>,
-    ),
-    DeleteTag(
-        Atom,
-        String,
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<bool, SqliteConnectionError>>,
-    ),
-    CreateBlob(
-        Atom,
-        String,
-        Mime,
-        Hash,
-        bool,
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<bool, SqliteConnectionError>>,
-    ),
-    DeleteBlob(
-        Atom,
-        String,
-        Mime,
-        #[derivative(Debug = "ignore")] oneshot::Sender<Result<bool, SqliteConnectionError>>,
-    ),
-    Query(
-        Option<usize>,
-        NamelessQuery,
-        #[derivative(Debug = "ignore")]
-        oneshot::Sender<Result<Vec<Vec<Arc<str>>>, SqliteConnectionError>>,
-    ),
 }

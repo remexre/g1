@@ -78,6 +78,13 @@ use uuid::Uuid;
 #[serde(transparent)]
 pub struct Atom(#[serde(with = "utils::string")] Uuid);
 
+impl Atom {
+    /// Generates a new, random Atom.
+    pub fn new() -> Atom {
+        Atom(Uuid::new_v4())
+    }
+}
+
 /// Hashes are identifiers for blobs. Each is a SHA256 hash of the blob, possibly with some
 /// additional metadata.
 ///
@@ -212,7 +219,7 @@ pub trait Connection: Send + Sync {
     /// Returns whether the name existed prior to the call.
     async fn delete_name(&self, ns: &str, title: &str) -> Result<bool, Self::Error>;
 
-    /// Creates a new edge between two atoms. If either of the atoms does not exist, creates them.
+    /// Creates a new edge between two atoms.
     ///
     /// Returns `true` if an edge already exists with the same endpoints and label.
     async fn create_edge(&self, from: Atom, to: Atom, label: &str) -> Result<bool, Self::Error>;

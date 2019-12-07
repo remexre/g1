@@ -79,12 +79,19 @@ pub fn naive_solve(
         .remove(query.goal.name as usize)
         .into_iter()
         .filter(|tuple| {
+            let mut vars = (0..query.goal_vars).map(|_| None).collect::<Vec<_>>();
             tuple
                 .iter()
                 .zip(&query.goal.args)
                 .all(|(val, arg)| match arg {
                     NamelessValue::Str(s) => s == val,
-                    NamelessValue::Var(_) => true,
+                    NamelessValue::Var(n) => match &vars[*n as usize] {
+                        Some(s) => s == &val,
+                        None => {
+                            vars[*n as usize] = Some(val);
+                            true
+                        }
+                    },
                 })
         });
     if let Some(limit) = limit {
@@ -98,7 +105,7 @@ fn compute_new_tuples(
     tuples: &Vec<HashSet<Vec<Arc<str>>>>,
     clause: &NamelessClause,
 ) -> HashSet<Vec<Arc<str>>> {
-    assert!(clause.body_neg.is_empty(), "TODO");
+    assert!(clause.body_neg.is_empty(), "TODO negation");
 
     make_envs(tuples, &clause.body_pos, clause.vars)
         .map(|env| {

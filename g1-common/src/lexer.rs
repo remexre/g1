@@ -58,9 +58,6 @@ pub enum Token {
     #[token = ".delete_edge"]
     DotDeleteEdge,
 
-    #[token = ".upsert_edge"]
-    DotUpsertEdge,
-
     #[token = ".create_tag"]
     DotCreateTag,
 
