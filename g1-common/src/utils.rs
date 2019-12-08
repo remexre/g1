@@ -29,7 +29,7 @@ pub async fn file_to_stream<P: AsRef<Path>>(
 ) -> Result<impl Stream<Item = Result<Bytes, tokio::io::Error>>, tokio::io::Error> {
     let mut file = File::open(path).await?;
     Ok(stream::poll_fn(move |cx| {
-        let mut buf = [0; 1024];
+        let mut buf = [0; 4096];
         Pin::new(&mut file)
             .poll_read(cx, &mut buf)
             .map(move |r| match r {

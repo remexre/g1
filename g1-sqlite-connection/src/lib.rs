@@ -41,6 +41,7 @@ use g1_common::{
 };
 use sha2::{Digest, Sha256};
 use std::{
+    ffi::CString,
     os::unix::ffi::OsStrExt,
     path::PathBuf,
     pin::Pin,
@@ -274,33 +275,7 @@ impl Connection for SqliteConnection {
 
         rename(tmp_path, &path).await?;
         let _ = path.pop();
-        // TODO: Replace with https://github.com/tokio-rs/tokio/issues/1922
-        spawn_blocking(move || {
-            let path = path.as_os_str().as_bytes().as_ptr() as *const libc::c_char;
-
-            #[allow(unsafe_code)]
-            unsafe {
-                let errno = libc::__errno_location();
-
-                let fd = libc::open(path, libc::O_RDONLY);
-                if fd == -1 {
-                    return Err(*errno);
-                }
-
-                if libc::fsync(fd) != 0 {
-                    let _ = libc::close(fd);
-                    return Err(*errno);
-                }
-
-                if libc::close(fd) != 0 {
-                    return Err(*errno);
-                }
-            }
-            Ok(())
-        })
-        .await
-        .map_err(tokio::io::Error::from)?
-        .map_err(std::io::Error::from_raw_os_error)?;
+        fsync_dir(path).await?;
 
         Ok(hash)
     }
@@ -341,4 +316,36 @@ impl g1_common::Error for SqliteError {
     fn invalid_query(msg: String) -> SqliteError {
         SqliteError::InvalidQuery(msg)
     }
+}
+
+// TODO: Replace with https://github.com/tokio-rs/tokio/issues/1922
+async fn fsync_dir(path: PathBuf) -> Result<(), tokio::io::Error> {
+    spawn_blocking(move || {
+        let mut path = path.as_os_str().as_bytes().to_vec();
+        path.push(b'\0');
+
+        #[allow(unsafe_code)]
+        unsafe {
+            let errno = libc::__errno_location();
+
+            let path = CString::from_vec_unchecked(path);
+            let fd = libc::open(path.as_ptr(), libc::O_RDONLY);
+            if fd == -1 {
+                return Err(*errno);
+            }
+
+            if libc::fsync(fd) != 0 {
+                let _ = libc::close(fd);
+                return Err(*errno);
+            }
+
+            if libc::close(fd) != 0 {
+                return Err(*errno);
+            }
+        }
+        Ok(())
+    })
+    .await
+    .map_err(tokio::io::Error::from)?
+    .map_err(std::io::Error::from_raw_os_error)
 }
