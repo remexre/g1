@@ -1,8 +1,12 @@
 [package]
 authors = ["Nathan Ringo <nathan@remexre.xyz>"]
 description = "Common types and traits between the client and server portion of the G1 graph store."
+documentation = "https://docs.rs/g1-common"
 edition = "2018"
+homepage = "https://github.com/remexre/g1"
+license = "Apache-2.0/MIT"
 name = "g1-common"
+repository = "https://github.com/remexre/g1"
 version = "0.1.0-alpha.3"
 
 [dependencies]
