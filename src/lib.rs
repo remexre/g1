@@ -142,7 +142,7 @@ pub use lazy_static::lazy_static;
 pub use g1_sqlite_connection::{SqliteConnection, SqliteError};
 
 /// Useful utilities.
-pub mod util {
+pub mod utils {
     /// Reads a file as a stream of chunks. Useful with `Connection::store_blob`.
-    pub use g1_common::util::file_to_stream;
+    pub use g1_common::utils::file_to_stream;
 }
