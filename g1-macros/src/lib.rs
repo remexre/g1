@@ -26,6 +26,7 @@ pub fn query(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 fn process(src: &str) -> Result<TokenStream, String> {
     let query = src.parse::<Query>().map_err(|e| e.to_string())?;
     let query = NamelessQuery::from_query(query).map_err(|e: SimpleError| e.0)?;
+    query.validate().map_err(|e: SimpleError| e.0)?;
     let query = query_to_tokens(&query);
     Ok(quote! {
         {
