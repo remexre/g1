@@ -30,18 +30,48 @@ impl Command {
                     }
                 });
             }
-            Command::DeleteAtom(_atom, _send) => error!("TODO"),
-            Command::CreateName(_atom, _ns, _title, true, _send) => error!("TODO"),
+            Command::DeleteAtom(atom, send) => with_sender(send, move || {
+                let tx = conn.transaction()?;
+
+                let _ = tx.execute("delete from names where atom = ?", &[atom.to_string()])?;
+                let _ = tx.execute("delete from edges where edge_from = ?", &[atom.to_string()])?;
+                let _ = tx.execute("delete from edges where edge_to = ?", &[atom.to_string()])?;
+                let _ = tx.execute("delete from tags where atom = ?", &[atom.to_string()])?;
+                let _ = tx.execute("delete from blobs where atom = ?", &[atom.to_string()])?;
+
+                tx.finish()?;
+                Ok(())
+            }),
+            Command::CreateName(atom, ns, title, true, send) => {
+                with_sender(send, move || {
+                    let _ = conn.execute(
+                        "insert or replace into names values (?, ?, ?)",
+                        &[atom.to_string(), ns, title],
+                    )?;
+                    Ok(())
+                });
+            }
             Command::CreateName(atom, ns, title, false, send) => {
                 with_sender(send, move || {
                     let _ = conn.execute(
                         "insert into names values (?, ?, ?)",
                         &[atom.to_string(), ns, title],
                     )?;
-                    Ok(false)
+                    Ok(())
                 });
             }
-            Command::DeleteName(_ns, _title, _send) => error!("TODO"),
+            Command::DeleteName(ns, title, send) => with_sender(send, move || {
+                conn.execute("delete from names where ns = ? and title = ?", &[ns, title])
+                    .map(|n| match n {
+                        0 => false,
+                        1 => true,
+                        n => {
+                            error!("unexpected result from deleting name: {}", n);
+                            true
+                        }
+                    })
+                    .map_err(From::from)
+            }),
             Command::CreateEdge(from, to, label, send) => {
                 with_sender(send, move || {
                     match conn.execute(
@@ -60,29 +90,87 @@ impl Command {
                     }
                 });
             }
-            Command::DeleteEdge(_from, _to, _label, _send) => error!("TODO"),
-            Command::CreateTag(_atom, _key, _value, true, _send) => error!("TODO"),
+            Command::DeleteEdge(from, to, label, send) => with_sender(send, move || {
+                conn.execute(
+                    "delete from edges where edge_from = ? and edge_to = ? and label = ?",
+                    &[from.to_string(), to.to_string(), label],
+                )
+                .map(|n| match n {
+                    0 => false,
+                    1 => true,
+                    n => {
+                        error!("unexpected result from deleting edge: {}", n);
+                        true
+                    }
+                })
+                .map_err(From::from)
+            }),
+            Command::CreateTag(atom, key, value, true, send) => {
+                with_sender(send, move || {
+                    let _ = conn.execute(
+                        "insert or replace into tags values (?, ?, ?)",
+                        &[atom.to_string(), key, value],
+                    )?;
+                    Ok(())
+                });
+            }
             Command::CreateTag(atom, key, value, false, send) => {
                 with_sender(send, move || {
                     let _ = conn.execute(
                         "insert into tags values (?, ?, ?)",
                         &[atom.to_string(), key, value],
                     )?;
-                    Ok(false)
+                    Ok(())
                 });
             }
-            Command::DeleteTag(_atom, _key, _send) => error!("TODO"),
-            Command::CreateBlob(_atom, _kind, _mime, _hash, true, _send) => error!("TODO"),
+            Command::DeleteTag(atom, key, send) => with_sender(send, move || {
+                conn.execute(
+                    "delete from tags where atom = ? and key = ?",
+                    &[atom.to_string(), key],
+                )
+                .map(|n| match n {
+                    0 => false,
+                    1 => true,
+                    n => {
+                        error!("unexpected result from deleting tag: {}", n);
+                        true
+                    }
+                })
+                .map_err(From::from)
+            }),
+            Command::CreateBlob(atom, kind, mime, hash, true, send) => {
+                with_sender(send, move || {
+                    let _ = conn.execute(
+                        "insert or replace into blobs values (?, ?, ?, ?)",
+                        &[atom.to_string(), kind, mime.to_string(), hash.to_string()],
+                    )?;
+                    Ok(())
+                });
+            }
             Command::CreateBlob(atom, kind, mime, hash, false, send) => {
                 with_sender(send, move || {
                     let _ = conn.execute(
                         "insert into blobs values (?, ?, ?, ?)",
                         &[atom.to_string(), kind, mime.to_string(), hash.to_string()],
                     )?;
-                    Ok(false)
+                    Ok(())
                 });
             }
-            Command::DeleteBlob(_atom, _kind, _mime, _send) => error!("TODO"),
+            Command::DeleteBlob(atom, kind, mime, send) => with_sender(send, move || {
+                conn.execute(
+                    "delete from blobs where atom = ? and kind = ? and mime = ?",
+                    &[atom.to_string(), kind, mime.to_string()],
+                )
+                .map(|n| match n {
+                    0 => false,
+                    1 => true,
+                    n => {
+                        error!("unexpected result from deleting blob: {}", n);
+                        true
+                    }
+                })
+                .map_err(From::from)
+            }),
             Command::Query(limit, query, send) => {
                 with_sender(send, move || {
                     let tx = conn.transaction()?;

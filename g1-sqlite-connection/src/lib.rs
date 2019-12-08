@@ -78,18 +78,22 @@ create table if not exists names
   ( atom text not null
   , ns text not null
   , title text not null
+  , constraint nameAtom foreign key (atom) references atoms(atom)
   , constraint nameUnique unique (ns, title)
   );
 create table if not exists edges
   ( edge_from text not null
   , edge_to text not null
   , label text not null
+  , constraint edgeFromAtom foreign key (edge_from) references atoms(atom)
+  , constraint edgeToAtom foreign key (edge_to) references atoms(atom)
   , constraint edgeUnique unique (edge_from, edge_to, label)
   );
 create table if not exists tags
   ( atom text not null
   , key text not null
   , value text not null
+  , constraint tagAtom foreign key (atom) references atoms(atom)
   , constraint tagUnique unique (atom, key)
   );
 create table if not exists blobs
@@ -97,6 +101,7 @@ create table if not exists blobs
   , kind text not null
   , mime text not null
   , hash text not null
+  , constraint blobAtom foreign key (atom) references atoms(atom)
   , constraint blobUnique unique (atom, kind, mime)
   );"#;
 
@@ -110,6 +115,7 @@ impl SqliteConnection {
         conn_path.push("g1.db");
         let conn = spawn_blocking(move || -> rusqlite::Result<rusqlite::Connection> {
             let conn = rusqlite::Connection::open(conn_path)?;
+            conn.pragma_update(None, "foreign_keys", &true)?;
             conn.execute_batch(INITDB)?;
             Ok(conn)
         })
@@ -163,7 +169,7 @@ impl Connection for SqliteConnection {
         self.send_command(|send| Command::CreateAtom(send)).await
     }
 
-    async fn delete_atom(&self, atom: Atom) -> Result<bool, Self::Error> {
+    async fn delete_atom(&self, atom: Atom) -> Result<(), Self::Error> {
         self.send_command(move |send| Command::DeleteAtom(atom, send))
             .await
     }
@@ -174,7 +180,7 @@ impl Connection for SqliteConnection {
         ns: &str,
         title: &str,
         upsert: bool,
-    ) -> Result<bool, Self::Error> {
+    ) -> Result<(), Self::Error> {
         self.send_command(move |send| {
             Command::CreateName(atom, ns.to_string(), title.to_string(), upsert, send)
         })
@@ -202,7 +208,7 @@ impl Connection for SqliteConnection {
         key: &str,
         value: &str,
         upsert: bool,
-    ) -> Result<bool, Self::Error> {
+    ) -> Result<(), Self::Error> {
         self.send_command(move |send| {
             Command::CreateTag(atom, key.to_string(), value.to_string(), upsert, send)
         })
@@ -221,7 +227,7 @@ impl Connection for SqliteConnection {
         mime: Mime,
         hash: Hash,
         upsert: bool,
-    ) -> Result<bool, Self::Error> {
+    ) -> Result<(), Self::Error> {
         self.send_command(move |send| {
             Command::CreateBlob(atom, kind.to_string(), mime, hash, upsert, send)
         })

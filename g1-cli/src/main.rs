@@ -251,18 +251,10 @@ async fn repl_one<C: Connection>(
             println!("{}", conn.create_atom().await?);
         }
         Command::DeleteAtom(atom) => {
-            if conn.delete_atom(atom.parse()?).await? {
-                println!("Deleted atom.");
-            } else {
-                println!("Atom did not exist.");
-            }
+            conn.delete_atom(atom.parse()?).await?;
         }
         Command::CreateName(atom, ns, title, upsert) => {
-            if conn.create_name(atom.parse()?, &ns, &title, upsert).await? {
-                println!("Updated name.");
-            } else {
-                println!("Created name.");
-            }
+            conn.create_name(atom.parse()?, &ns, &title, upsert).await?;
         }
         Command::DeleteName(ns, title) => {
             if conn.delete_name(&ns, &title).await? {
@@ -286,11 +278,7 @@ async fn repl_one<C: Connection>(
             }
         }
         Command::CreateTag(atom, key, value, upsert) => {
-            if conn.create_tag(atom.parse()?, &key, &value, upsert).await? {
-                println!("Updated tag.");
-            } else {
-                println!("Created tag.");
-            }
+            conn.create_tag(atom.parse()?, &key, &value, upsert).await?;
         }
         Command::DeleteTag(atom, key) => {
             if conn.delete_tag(atom.parse()?, &key).await? {
@@ -300,14 +288,8 @@ async fn repl_one<C: Connection>(
             }
         }
         Command::CreateBlob(atom, kind, mime, hash, upsert) => {
-            if conn
-                .create_blob(atom.parse()?, &kind, mime.parse()?, hash.parse()?, upsert)
-                .await?
-            {
-                println!("Updated blob.");
-            } else {
-                println!("Created blob.");
-            }
+            conn.create_blob(atom.parse()?, &kind, mime.parse()?, hash.parse()?, upsert)
+                .await?;
         }
         Command::DeleteBlob(atom, kind, mime) => {
             if conn

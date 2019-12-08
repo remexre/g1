@@ -9,14 +9,14 @@ pub enum Command {
     CreateAtom(#[derivative(Debug = "ignore")] Sender<Result<Atom, SqliteError>>),
     DeleteAtom(
         Atom,
-        #[derivative(Debug = "ignore")] Sender<Result<bool, SqliteError>>,
+        #[derivative(Debug = "ignore")] Sender<Result<(), SqliteError>>,
     ),
     CreateName(
         Atom,
         String,
         String,
         bool,
-        #[derivative(Debug = "ignore")] Sender<Result<bool, SqliteError>>,
+        #[derivative(Debug = "ignore")] Sender<Result<(), SqliteError>>,
     ),
     DeleteName(
         String,
@@ -40,7 +40,7 @@ pub enum Command {
         String,
         String,
         bool,
-        #[derivative(Debug = "ignore")] Sender<Result<bool, SqliteError>>,
+        #[derivative(Debug = "ignore")] Sender<Result<(), SqliteError>>,
     ),
     DeleteTag(
         Atom,
@@ -53,7 +53,7 @@ pub enum Command {
         Mime,
         Hash,
         bool,
-        #[derivative(Debug = "ignore")] Sender<Result<bool, SqliteError>>,
+        #[derivative(Debug = "ignore")] Sender<Result<(), SqliteError>>,
     ),
     DeleteBlob(
         Atom,

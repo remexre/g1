@@ -202,21 +202,19 @@ pub trait Connection: Send + Sync {
     /// Note that the atom itself is not deleted, so `create_atom` will not reuse it. At some
     /// point, an operation to do this may exist, but note that doing so will break useful
     /// properties for most operations.
-    ///
-    /// Returns whether the atom existed prior to the call.
-    async fn delete_atom(&self, atom: Atom) -> Result<bool, Self::Error>;
+    async fn delete_atom(&self, atom: Atom) -> Result<(), Self::Error>;
 
     /// Creates a new name for an atom.
     ///
     /// If the name already exists, it is an error unless `upsert` is `true`, in which case the
-    /// existing name will be deleted. Returns whether a name was deleted due to `upsert`.
+    /// existing name will be deleted.
     async fn create_name(
         &self,
         atom: Atom,
         ns: &str,
         title: &str,
         upsert: bool,
-    ) -> Result<bool, Self::Error>;
+    ) -> Result<(), Self::Error>;
 
     /// Deletes a name.
     ///
@@ -236,15 +234,14 @@ pub trait Connection: Send + Sync {
     /// Creates a tag attached to an atom with the given key and value.
     ///
     /// If a tag with the given key already exists on the atom, it is an error unless `upsert` is
-    /// `true`, in which case the existing value will be replaced by the given one. Returns whether
-    /// a value was replaced due to `upsert`.
+    /// `true`, in which case the existing value will be replaced by the given one.
     async fn create_tag(
         &self,
         atom: Atom,
         key: &str,
         value: &str,
         upsert: bool,
-    ) -> Result<bool, Self::Error>;
+    ) -> Result<(), Self::Error>;
 
     /// Deletes the tag with the given key from the given atom.
     ///
@@ -255,7 +252,7 @@ pub trait Connection: Send + Sync {
     ///
     /// If a blob with the given kind and MIME type already exists on the atom, it is an error
     /// unless `upsert` is `true`, in which case the existing hash will be replaced by the given
-    /// ones. Returns whether the hash was replaced due to `upsert`.
+    /// ones.
     async fn create_blob(
         &self,
         atom: Atom,
@@ -263,7 +260,7 @@ pub trait Connection: Send + Sync {
         mime: Mime,
         hash: Hash,
         upsert: bool,
-    ) -> Result<bool, Self::Error>;
+    ) -> Result<(), Self::Error>;
 
     /// Deletes the blob with the given kind and MIME type from the given atom.
     ///

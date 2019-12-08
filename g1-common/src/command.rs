@@ -25,8 +25,6 @@ pub enum Command {
     /// Note that the atom itself is not deleted, so `create_atom` will not reuse it. At some
     /// point, an operation to do this may exist, but note that doing so will break useful
     /// properties for most operations.
-    ///
-    /// Prints whether the atom existed prior to the call.
     DeleteAtom(String),
 
     /// Creates a new name for an atom.
