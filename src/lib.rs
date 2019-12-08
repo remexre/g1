@@ -140,3 +140,9 @@ pub use lazy_static::lazy_static;
 
 #[cfg(feature = "g1-sqlite-connection")]
 pub use g1_sqlite_connection::{SqliteConnection, SqliteError};
+
+/// Useful utilities.
+pub mod util {
+    /// Reads a file as a stream of chunks. Useful with `Connection::store_blob`.
+    pub use g1_common::util::file_to_stream;
+}
