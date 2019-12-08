@@ -7,13 +7,13 @@ homepage = "https://github.com/remexre/g1"
 license = "Apache-2.0/MIT"
 name = "g1-sqlite-connection"
 repository = "https://github.com/remexre/g1"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4"
 
 [dependencies]
 async-trait = "0.1.21"
 derivative = "1.0.3"
 futures = "0.3.1"
-g1-common = { path = "../g1-common", version = "0.1.0-alpha.3" }
+g1-common = { path = "../g1-common", version = "0.1.0-alpha.4" }
 log = "0.4.8"
 rusqlite = "0.20.0"
 thiserror = "1.0.9"
