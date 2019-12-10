@@ -21,6 +21,7 @@ Var: String = {
 pub Value: Value = {
 	String => Value::Str(<>),
 	Var => Value::Var(<>),
+	MetaVar => Value::MetaVar(<>.1[1..].to_string()),
 };
 
 Values: Vec<Value> = {
@@ -142,6 +143,7 @@ extern {
 		"." => (Token::Period, _),
 		"," => (Token::Comma, _),
 		"/" => (Token::Slash, _),
+		"_" => (Token::Underscore, _),
 		"?-" => (Token::Query, _),
 		":-" => (Token::Turnstile, _),
 		"!" => (Token::Not, _),
@@ -166,5 +168,6 @@ extern {
 		StringTok => (Token::String, _),
 		EscapedVar => (Token::EscapedVar, _),
 		UnescapedVar => (Token::Var, _),
+		MetaVar => (Token::MetaVar, _),
 	}
 }

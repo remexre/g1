@@ -35,6 +35,12 @@ fn fmt_var(s: &str, fmt: &mut Formatter) -> FmtResult {
 /// ```
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum Value {
+    /// A hole.
+    Hole,
+
+    /// A metavariable.
+    MetaVar(String),
+
     /// A string.
     Str(String),
 
@@ -45,6 +51,8 @@ pub enum Value {
 impl Display for Value {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match self {
+            Value::Hole => fmt.write_str("_"),
+            Value::MetaVar(v) => write!(fmt, "${}", v),
             Value::Str(s) => write!(fmt, "{:?}", s),
             Value::Var(v) => fmt_var(v, fmt),
         }

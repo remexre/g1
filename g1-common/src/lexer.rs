@@ -103,6 +103,9 @@ pub enum Token {
     #[token = "/"]
     Slash,
 
+    #[token = "_"]
+    Underscore,
+
     #[token = "?-"]
     Query,
 
@@ -123,6 +126,9 @@ pub enum Token {
 
     #[regex = "[A-Za-z_-][0-9A-Za-z_-]*"]
     Var,
+
+    #[regex = "\\$[a-zA-Z_][a-zA-Z0-9_]*"]
+    MetaVar,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Logos, PartialEq)]

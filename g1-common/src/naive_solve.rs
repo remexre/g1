@@ -84,6 +84,7 @@ pub fn naive_solve(
                 .iter()
                 .zip(&query.goal.args)
                 .all(|(val, arg)| match arg {
+                    NamelessValue::MetaVar(v) => panic!("unfilled metavariable: ${}", v),
                     NamelessValue::Str(s) => s == val,
                     NamelessValue::Var(n) => match &vars[*n as usize] {
                         Some(s) => s == &val,
@@ -113,6 +114,7 @@ fn compute_new_tuples(
                 .head
                 .iter()
                 .map(|x| match x {
+                    NamelessValue::MetaVar(v) => panic!("unfilled metavariable: ${}", v),
                     NamelessValue::Str(s) => s,
                     NamelessValue::Var(n) => env[*n as usize].as_ref().unwrap(),
                 })
@@ -136,6 +138,7 @@ fn make_envs<'a>(
                 let mut env = env.clone();
                 for (arg, val) in pred.args.iter().zip(tuple) {
                     match arg {
+                        NamelessValue::MetaVar(v) => panic!("unfilled metavariable: ${}", v),
                         NamelessValue::Str(s) => {
                             if s != val {
                                 return None;

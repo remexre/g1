@@ -16,6 +16,9 @@ use std::{collections::HashMap, convert::TryFrom, sync::Arc};
 /// A nameless representation of values.
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum NamelessValue {
+    /// A metavariable.
+    MetaVar(String),
+
     /// A string.
     Str(Arc<str>),
 
@@ -31,7 +34,15 @@ impl Value {
         positive: bool,
     ) -> Result<NamelessValue, E> {
         match self {
-            Value::Str(s) => Ok(NamelessValue::Str(strings.store(s))),
+            Value::Hole => {
+                let n = var_env.len();
+                var_env.push(("_".to_string(), positive));
+                let n = u32::try_from(n)
+                    .map_err(|_| Error::invalid_query("too many variables used".to_string()))?;
+                Ok(NamelessValue::Var(n))
+            }
+            Value::MetaVar(v) => Ok(NamelessValue::MetaVar(v)),
+            Value::Str(s) => Ok(NamelessValue::Str(strings.store_owned(s))),
             Value::Var(v) => {
                 let n = var_env
                     .iter()
@@ -49,6 +60,24 @@ impl Value {
                 Ok(NamelessValue::Var(n))
             }
         }
+    }
+}
+
+impl<'a> From<&'a str> for NamelessValue {
+    fn from(s: &'a str) -> NamelessValue {
+        NamelessValue::from(s.to_string())
+    }
+}
+
+impl From<String> for NamelessValue {
+    fn from(s: String) -> NamelessValue {
+        NamelessValue::from(Arc::from(s))
+    }
+}
+
+impl From<Arc<str>> for NamelessValue {
+    fn from(s: Arc<str>) -> NamelessValue {
+        NamelessValue::Str(s)
     }
 }
 

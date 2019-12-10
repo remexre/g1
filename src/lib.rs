@@ -132,11 +132,17 @@ pub use g1_common::{
     Atom, Bytes, Connection, Hash, Mime,
 };
 
+use g1_common::utils::StringPool;
 /// Parses a query into a `NamelessQuery` literal.
-#[proc_macro_hack::proc_macro_hack]
+#[proc_macro_hack::proc_macro_hack(fake_call_site)]
 pub use g1_macros::query;
 #[doc(hidden)]
 pub use lazy_static::lazy_static;
+use std::sync::Mutex;
+lazy_static! {
+    #[doc(hidden)]
+    pub static ref QUERY_MACRO_STRING_POOL: Mutex<StringPool> = Mutex::new(StringPool::default());
+}
 
 #[cfg(feature = "g1-sqlite-connection")]
 pub use g1_sqlite_connection::{SqliteConnection, SqliteError};

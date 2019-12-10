@@ -11,11 +11,24 @@ pub struct StringPool(HashSet<Arc<str>>);
 
 impl StringPool {
     /// Stores a string in the pool, returning an `Arc<str>`.
-    pub fn store(&mut self, s: String) -> Arc<str> {
-        let s = Arc::from(s);
-        match self.0.get(&s) {
+    pub fn store(&mut self, s: &str) -> Arc<str> {
+        match self.0.get(s) {
             Some(s) => s.clone(),
             None => {
+                let s: Arc<str> = Arc::from(s.to_string());
+                let _ = self.0.insert(s.clone());
+                s
+            }
+        }
+    }
+
+    /// Stores a string in the pool, returning an `Arc<str>`.
+    pub fn store_owned(&mut self, s: String) -> Arc<str> {
+        let borrowed: &str = &s;
+        match self.0.get(borrowed) {
+            Some(s) => s.clone(),
+            None => {
+                let s: Arc<str> = Arc::from(s);
                 let _ = self.0.insert(s.clone());
                 s
             }
