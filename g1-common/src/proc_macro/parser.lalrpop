@@ -25,6 +25,20 @@ Clause: Clause = {
 PNPredicate: (bool, Predicate) = {
     <p: Predicate> => (false, p),
     "!" <p: Predicate> => (true, p),
+    <l: @L> <lv: Value> "=" <rv: Value> <r: @R> => {
+		(false, Predicate {
+			name: Ident::new("=", Span::default().into()),
+			args: vec![lv, rv],
+			span: l.join(r)
+		})
+	},
+    <l: @L> <lv: Value> "!" "=" <rv: Value> <r: @R> => {
+		(true, Predicate {
+			name: Ident::new("=", Span::default().into()),
+			args: vec![lv, rv],
+			span: l.join(r)
+		})
+	},
 };
 
 Predicate: Predicate = {
@@ -85,6 +99,7 @@ extern {
         "-" => Token::Punct('-', _),
         "." => Token::Punct('.', _),
         ":" => Token::Punct(':', _),
+        "=" => Token::Punct('=', _),
         "?" => Token::Punct('?', _),
     }
 }

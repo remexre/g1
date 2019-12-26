@@ -108,20 +108,26 @@ pub enum Token {
     /// An underscore character ('_').
     Underscore,
 
-    /// A period character ('.').
-    Period,
+    /// An exclaimation mark, `!`.
+    Not,
+
+    /// The inequality operator, `!=`.
+    NotEquals,
 
     /// A comma character (',').
     Comma,
 
-    /// The "query operator", `?-`.
-    Query,
+    /// A period character ('.').
+    Period,
 
     /// The turnstile operator, `:-`.
     Turnstile,
 
-    /// An exclaimation mark, `!`.
-    Not,
+    /// The equals sign, `=`.
+    Equals,
+
+    /// The "query operator", `?-`.
+    Query,
 
     /// A string enclosed in double-quotes.
     String(String),

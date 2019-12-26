@@ -22,6 +22,20 @@ pub Clause: Clause = {
 PNPredicate: (bool, Predicate) = {
 	<p: Predicate> => (false, p),
 	"!" <p: Predicate> => (true, p),
+    <l: @L> <lv: Value> "=" <rv: Value> <r: @R> => {
+		(false, Predicate {
+			name: "=".to_string(),
+			args: vec![lv, rv],
+			span: Span(l, r)
+		})
+	},
+    <l: @L> <lv: Value> "!" "=" <rv: Value> <r: @R> => {
+		(true, Predicate {
+			name: "=".to_string(),
+			args: vec![lv, rv],
+			span: Span(l, r)
+		})
+	},
 };
 
 pub Predicate: Predicate = {
@@ -70,14 +84,16 @@ extern {
 	type Location = Point;
 
 	enum Token {
-    	")" => Token::ParenClose,
     	"(" => Token::ParenOpen,
+    	")" => Token::ParenClose,
 		"_" => Token::Underscore,
-    	"." => Token::Period,
-    	"," => Token::Comma,
-    	"?-" => Token::Query,
-    	":-" => Token::Turnstile,
     	"!" => Token::Not,
+    	"!=" => Token::NotEquals,
+    	"," => Token::Comma,
+    	"." => Token::Period,
+    	":-" => Token::Turnstile,
+    	"=" => Token::Equals,
+    	"?-" => Token::Query,
     	String => Token::String(<String>),
     	Var => Token::Var(<String>),
 	}
