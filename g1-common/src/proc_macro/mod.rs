@@ -10,8 +10,9 @@ pub mod token;
 
 use crate::proc_macro::token::{tokenstream_to_tokens, Span, Token};
 use lalrpop_util::ParseError;
-use proc_macro2::{Ident, Literal, TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use std::convert::Infallible;
+use syn::LitStr;
 
 /// The actual data inside the `Value` type.
 #[derive(Debug)]
@@ -22,8 +23,8 @@ pub enum Value {
     /// An identifier. This represents a Rust variable being interpolated in.
     Ident(Ident),
 
-    /// A literal.
-    Literal(Literal),
+    /// A string literal.
+    String(LitStr),
 
     /// A variable.
     Var(Ident),
@@ -63,8 +64,9 @@ pub struct Clause {
 /// ```
 /// # use g1_common::proc_macro::{token::Span, Clause, Predicate, Query, Value};
 /// # use pretty_assertions::assert_eq;
-/// # use proc_macro2::{Ident, Literal};
+/// # use proc_macro2::Ident;
 /// # use quote::quote;
+/// # use syn::LitStr;
 /// let actual = Query::parse(quote! {
 ///     edge("A", "B").
 ///     edge("A", "C").
@@ -83,8 +85,8 @@ pub struct Clause {
 ///             head: Predicate {
 ///                 name: Ident::new("edge", Span::default().into()),
 ///                 args: vec![
-///                     Value::Literal(Literal::string("A")),
-///                     Value::Literal(Literal::string("B")),
+///                     Value::String(LitStr::new("A", Span::default().into())),
+///                     Value::String(LitStr::new("B", Span::default().into())),
 ///                 ],
 ///                 span: Span::default(),
 ///             },
@@ -95,8 +97,8 @@ pub struct Clause {
 ///             head: Predicate {
 ///                 name: Ident::new("edge", Span::default().into()),
 ///                 args: vec![
-///                     Value::Literal(Literal::string("A")),
-///                     Value::Literal(Literal::string("C")),
+///                     Value::String(LitStr::new("A", Span::default().into())),
+///                     Value::String(LitStr::new("C", Span::default().into())),
 ///                 ],
 ///                 span: Span::default(),
 ///             },
@@ -107,8 +109,8 @@ pub struct Clause {
 ///             head: Predicate {
 ///                 name: Ident::new("edge", Span::default().into()),
 ///                 args: vec![
-///                     Value::Literal(Literal::string("B")),
-///                     Value::Literal(Literal::string("C")),
+///                     Value::String(LitStr::new("B", Span::default().into())),
+///                     Value::String(LitStr::new("C", Span::default().into())),
 ///                 ],
 ///                 span: Span::default(),
 ///             },

@@ -1,5 +1,7 @@
 use derive_more::{From, Into};
 use proc_macro2::{Delimiter, Ident, Literal, TokenStream, TokenTree};
+use quote::quote;
+use syn::LitStr;
 
 /// A wrapper around `proc_macro2::Span`, to give a `Default` impl.
 #[derive(Clone, Copy, Debug, From, Into)]
@@ -41,8 +43,12 @@ pub enum Token {
     /// An identifier.
     Ident(Ident),
 
-    /// A literal character (`'a'`), string (`"hello"`), number (`2.3`), etc.
+    /// A literal character (`'a'`), number (`2.3`), etc. Notably does not include a literal string
+    /// (`"hello"`).
     Literal(Literal),
+
+    /// A literal string (`"hello"`).
+    LiteralString(LitStr),
 
     /// A close parenthesis character (`)`).
     ParenClose(Span),
@@ -68,6 +74,7 @@ impl Token {
             | Token::Punct(_, span) => *span,
             Token::Ident(ident) => ident.span().into(),
             Token::Literal(literal) => literal.span().into(),
+            Token::LiteralString(lit_str) => lit_str.span().into(),
         }
     }
 }
@@ -98,7 +105,13 @@ fn append_tokentree(tokens: &mut Vec<Token>, tree: TokenTree) {
             }
         }
         TokenTree::Ident(ident) => tokens.push(Token::Ident(ident)),
-        TokenTree::Literal(literal) => tokens.push(Token::Literal(literal)),
+        TokenTree::Literal(literal) => {
+            if let Ok(lit_str) = syn::parse2(quote! { #literal }) {
+                tokens.push(Token::LiteralString(lit_str))
+            } else {
+                tokens.push(Token::Literal(literal))
+            }
+        }
         TokenTree::Punct(punct) => tokens.push(Token::Punct(punct.as_char(), punct.span().into())),
     }
 }

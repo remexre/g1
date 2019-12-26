@@ -2,8 +2,9 @@ use crate::proc_macro::{
     token::{Span, Token},
     Clause, Predicate, Query, Value,
 };
-use proc_macro2::{Ident, Literal};
+use proc_macro2::Ident;
 use std::convert::Infallible;
+use syn::LitStr;
 
 #[LALR]
 grammar;
@@ -34,7 +35,7 @@ Predicate: Predicate = {
 
 Value: Value = {
     "_" => Value::Hole(<>.span()),
-    <lit: Literal> => Value::Literal(lit),
+    <s: String> => Value::String(s),
     <ident: Ident> => Value::Var(ident),
     "$" <ident: Ident> => Value::Ident(ident),
 };
@@ -73,7 +74,7 @@ extern {
     type Location = Span;
 
     enum Token {
-        Literal => Token::Literal(<Literal>),
+        String => Token::LiteralString(<LitStr>),
         "_" => Token::Hole(_),
         Ident => Token::Ident(<Ident>),
         ")" => Token::ParenClose(_),
