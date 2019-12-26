@@ -148,7 +148,7 @@ enum Tok {
     #[regex = "'([^'\"\\\\]|\\\\[trn'\"\\\\])*'"]
     EscapedVar,
 
-    #[regex = "[A-Za-z_-][0-9A-Za-z_-]*"]
+    #[regex = "[A-Za-z][0-9A-Za-z_]*"]
     Var,
 }
 
