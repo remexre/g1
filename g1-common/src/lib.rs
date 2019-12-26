@@ -3,11 +3,11 @@
     bad_style,
     bare_trait_objects,
     const_err,
-    dead_code,
+    // dead_code,
     improper_ctypes,
     legacy_directory_ownership,
-    missing_debug_implementations,
-    missing_docs,
+    // missing_debug_implementations,
+    // missing_docs,
     no_mangle_generic_items,
     non_shorthand_field_patterns,
     overflowing_literals,
@@ -18,9 +18,8 @@
     safe_extern_statics,
     trivial_numeric_casts,
     unconditional_recursion,
-    unions_with_drop_fields,
     unsafe_code,
-    unused,
+    // unused,
     unused_allocation,
     unused_comparisons,
     unused_extern_crates,
@@ -31,6 +30,9 @@
     while_true
 )]
 
+pub mod lang;
+
+/*
 pub mod command;
 mod lexer;
 pub mod naive_solve;
@@ -328,3 +330,4 @@ impl Error for SimpleError {
         SimpleError(msg)
     }
 }
+*/

@@ -1,0 +1,96 @@
+use crate::lang::{
+    lexer::{Point, Span, Token},
+    Clause, Predicate, Query, Value, ValueInner,
+};
+
+#[LALR]
+grammar;
+
+pub Value: Value = {
+	<l: @L> "_" <r: @R> => Value { inner: ValueInner::Hole, span: Span(l, r) },
+	<l: @L> <s: String> <r: @R> => Value { inner: ValueInner::Str(s), span: Span(l, r) },
+	<l: @L> <v: Var> <r: @R> => Value { inner: ValueInner::Var(v), span: Span(l, r) },
+};
+
+Values: Vec<Value> = {
+	")" => Vec::new(),
+	"," <head: Value> <tail: Values> => {
+		let mut tail = tail;
+		tail.push(head);
+		tail
+	},
+};
+
+pub Predicate: Predicate = {
+	<l: @L> <name: Var> "(" ")" <r: @R> => Predicate { name, args: Vec::new(), span: Span(l, r) },
+	<l: @L> <name: Var> "(" <head: Value> <tail: Values> <r: @R> => {
+		let mut args = tail;
+		args.push(head);
+		args.reverse();
+		Predicate { name, args, span: Span(l, r) }
+	},
+};
+
+Predicates: Vec<(bool, Predicate)> = {
+	"." => Vec::new(),
+	"," <head: Predicate> <tail: Predicates> => {
+		let mut tail = tail;
+		tail.push((false, head));
+		tail
+	},
+	"," "!" <head: Predicate> <tail: Predicates> => {
+		let mut tail = tail;
+		tail.push((true, head));
+		tail
+	},
+};
+
+pub Clause: Clause = {
+	<l: @L> <head: Predicate> "." <r: @R> => Clause { head, body: Vec::new(), span: Span(l, r) },
+	<l: @L> <head: Predicate> ":-" <head_body: Predicate> <tail_body: Predicates> <r: @R> => {
+		let mut body = tail_body;
+		body.push((false, head_body));
+		body.reverse();
+		Clause { head, body, span: Span(l, r) }
+	},
+	<l: @L> <head: Predicate> ":-" "!" <head_body: Predicate> <tail_body: Predicates> <r: @R> => {
+		let mut body = tail_body;
+		body.push((true, head_body));
+		body.reverse();
+		Clause { head, body, span: Span(l, r) }
+	},
+};
+
+Clauses: Vec<Clause> = {
+	=> Vec::new(),
+	<init: Clauses> <tail: Clause> => {
+		let mut body = init;
+		body.push(tail);
+		body
+	},
+};
+
+pub Query: Query = {
+	<l: @L> <clauses: Clauses> "?-" <goal: Predicate> "." <r: @R> => {
+		Query { clauses, goal, span: Span(l, r) }
+	},
+};
+
+extern {
+	type Error = String;
+	type Location = Point;
+
+	enum Token {
+    	")" => Token::ParenClose,
+    	"(" => Token::ParenOpen,
+		"_" => Token::Underscore,
+    	"." => Token::Period,
+    	"," => Token::Comma,
+    	"?-" => Token::Query,
+    	":-" => Token::Turnstile,
+    	"!" => Token::Not,
+    	String => Token::String(<String>),
+    	Var => Token::Var(<String>),
+	}
+}
+
