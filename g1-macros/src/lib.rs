@@ -2,6 +2,7 @@
 
 extern crate proc_macro;
 
+/*
 use g1_common::{
     nameless::{NamelessClause, NamelessPredicate, NamelessQuery, NamelessValue},
     query::Query,
@@ -9,19 +10,21 @@ use g1_common::{
 };
 use proc_macro::{Delimiter, Ident, Span, TokenTree};
 use proc_macro2::TokenStream;
+*/
 use quote::quote;
 
 #[proc_macro_hack::proc_macro_hack]
 pub fn query(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let mut src = String::new();
-    stringify_tokens(&mut src, input);
+    let tokens = token::tokenstream_to_tokens(input.into());
 
-    match process(&src) {
-        Ok(ts) => ts.into(),
-        Err(err) => quote! { compile_error!(#err) }.into(),
-    }
+    let s = format!("{:?}", tokens);
+    let output = quote! {
+        compile_error!(#s)
+    };
+    output.into()
 }
 
+/*
 fn stringify_tokens(src: &mut String, tokens: proc_macro::TokenStream) {
     for tok in tokens {
         const NOSPACE_TOKENS: &[&str] = &["$", ":", "?"];
@@ -137,3 +140,4 @@ where
     }
     quote!(vec![#ts])
 }
+*/

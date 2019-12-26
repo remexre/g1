@@ -4,8 +4,7 @@
 //! `validate`d into a `ValidatedQuery<()>` in order to be sent.
 
 mod lexer;
-#[allow(unused_parens)] // https://github.com/lalrpop/lalrpop/issues/493
-pub mod parser {
+mod parser {
     pub use self::parser::*;
     use lalrpop_util::lalrpop_mod;
 

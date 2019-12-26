@@ -12,9 +12,11 @@ impl Default for Point {
     }
 }
 
+/// A span in the file.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Span(pub Point, pub Point);
 
+/// A lexer over strings, producing `Token`s.
 pub struct Lexer<'src> {
     inner: logos::Lexer<Tok, &'src str>,
     last_line: usize,
@@ -23,6 +25,7 @@ pub struct Lexer<'src> {
 }
 
 impl<'src> Lexer<'src> {
+    /// Creates a new `Lexer`.
     pub fn new(src: &'src str) -> Lexer {
         Lexer {
             inner: Tok::lexer(src),
@@ -93,17 +96,37 @@ impl<'src> Iterator for Lexer<'src> {
     }
 }
 
+/// A token in the source code.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Token {
+    /// A close parenthesis character (`)`).
     ParenClose,
+
+    /// An open parenthesis character (`(`).
     ParenOpen,
+
+    /// An underscore character ('_').
     Underscore,
+
+    /// A period character ('.').
     Period,
+
+    /// A comma character (',').
     Comma,
+
+    /// The "query operator", `?-`.
     Query,
+
+    /// The turnstile operator, `:-`.
     Turnstile,
+
+    /// An exclaimation mark, `!`.
     Not,
+
+    /// A string enclosed in double-quotes.
     String(String),
+
+    /// A variable, either unescaped or enclosed in single-quotes.
     Var(String),
 }
 

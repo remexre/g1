@@ -82,4 +82,3 @@ extern {
     	Var => Token::Var(<String>),
 	}
 }
-

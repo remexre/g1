@@ -1,0 +1,89 @@
+use crate::proc_macro::{
+    token::{Span, Token},
+    Clause, Predicate, Query, Value,
+};
+use proc_macro2::{Ident, Literal};
+use std::convert::Infallible;
+
+#[LALR]
+grammar;
+
+pub Query: Query = {
+    <l: @L> <clauses: Clauses> "?" "-" <goal: Predicate> "." <r: @R> => {
+        Query { clauses, goal, span: l.join(r) }
+    },
+};
+
+Clause: Clause = {
+    <l: @L> <head: Predicate> "." <r: @R> => Clause { head, body: Vec::new(), span: l.join(r) },
+    <l: @L> <head: Predicate> ":" "-" <body: CS1PNPredicates> "." <r: @R> => {
+        Clause { head, body, span: l.join(r) }
+    },
+};
+
+PNPredicate: (bool, Predicate) = {
+    <p: Predicate> => (false, p),
+    "!" <p: Predicate> => (true, p),
+};
+
+Predicate: Predicate = {
+    <l: @L> <name: Ident> "(" <args: CSValues> ")" <r: @R> => {
+        Predicate { name, args, span: l.join(r) }
+    },
+};
+
+Value: Value = {
+    "_" => Value::Hole(<>.span()),
+    <lit: Literal> => Value::Literal(lit),
+    <ident: Ident> => Value::Var(ident),
+    "$" <ident: Ident> => Value::Ident(ident),
+};
+
+Clauses: Vec<Clause> = {
+    => Vec::new(),
+    <mut init: Clauses> <last: Clause> => {
+        init.push(last);
+        init
+    }
+};
+
+CSValues: Vec<Value> = {
+    => Vec::new(),
+    CS1Values => <>,
+};
+
+CS1Values: Vec<Value> = {
+    Value => vec![<>],
+    <mut init: CS1Values> "," <last: Value> => {
+        init.push(last);
+        init
+    }
+};
+
+CS1PNPredicates: Vec<(bool, Predicate)> = {
+    PNPredicate => vec![<>],
+    <mut init: CS1PNPredicates> "," <last: PNPredicate> => {
+        init.push(last);
+        init
+    }
+};
+
+extern {
+    type Error = Infallible;
+    type Location = Span;
+
+    enum Token {
+        Literal => Token::Literal(<Literal>),
+        "_" => Token::Hole(_),
+        Ident => Token::Ident(<Ident>),
+        ")" => Token::ParenClose(_),
+        "(" => Token::ParenOpen(_),
+        "!" => Token::Punct('!', _),
+        "$" => Token::Punct('$', _),
+        "," => Token::Punct(',', _),
+        "-" => Token::Punct('-', _),
+        "." => Token::Punct('.', _),
+        ":" => Token::Punct(':', _),
+        "?" => Token::Punct('?', _),
+    }
+}
