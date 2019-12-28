@@ -1,6 +1,6 @@
 use crate::proc_macro::{
+    ir::{Clause, Predicate, Query, Value},
     token::{Span, Token},
-    Clause, Predicate, Query, Value,
 };
 use proc_macro2::Ident;
 use std::convert::Infallible;
@@ -27,14 +27,16 @@ PNPredicate: (bool, Predicate) = {
     "!" <p: Predicate> => (true, p),
     <l: @L> <lv: Value> "=" <rv: Value> <r: @R> => {
 		(false, Predicate {
-			name: Ident::new("=", Span::default().into()),
+			name: "=".to_string(),
+			name_ident: Ident::new("=", Span::default().into()),
 			args: vec![lv, rv],
 			span: l.join(r)
 		})
 	},
     <l: @L> <lv: Value> "!" "=" <rv: Value> <r: @R> => {
 		(true, Predicate {
-			name: Ident::new("=", Span::default().into()),
+			name: "=".to_string(),
+			name_ident: Ident::new("=", Span::default().into()),
 			args: vec![lv, rv],
 			span: l.join(r)
 		})
@@ -43,15 +45,15 @@ PNPredicate: (bool, Predicate) = {
 
 Predicate: Predicate = {
     <l: @L> <name: Ident> "(" <args: CSValues> ")" <r: @R> => {
-        Predicate { name, args, span: l.join(r) }
+        Predicate { name: name.to_string(), name_ident: name, args, span: l.join(r) }
     },
 };
 
 Value: Value = {
     "_" => Value::Hole(<>.span()),
-    <s: String> => Value::String(s),
-    <ident: Ident> => Value::Var(ident),
-    "$" <ident: Ident> => Value::Ident(ident),
+    <s: String> => Value::String(s.value(), s),
+    <ident: Ident> => Value::Var(ident.to_string(), ident),
+    "$" <ident: Ident> => Value::Ident(ident.to_string(), ident),
 };
 
 Clauses: Vec<Clause> = {

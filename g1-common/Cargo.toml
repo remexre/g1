@@ -10,23 +10,15 @@ repository = "https://github.com/remexre/g1"
 version = "0.1.0-alpha.4"
 
 [dependencies]
-async-trait = "0.1.21"
-bytes = "0.5.2"
-cfg-if = "0.1.10"
+derivative = "1.0.3"
 derive_more = "0.99.2"
-futures = "0.3.1"
 lalrpop-util = "0.17.2"
 logos = "0.9.7"
-mime = "0.3.14"
 proc-macro2 = "1.0.6"
 quote = "1.0.2"
-serde = { version = "1.0.102", features = ["rc"] }
-serde_derive = "1.0.103"
-static_assertions = "1.1.0"
+serde = { version = "1.0.102", features = ["derive", "rc"] }
 syn = { version = "1.0.11", features = ["derive", "parsing"] }
-tokio = { version = "0.2.4", features = ["fs", "io-util"] }
 topological-sort = "0.1.0"
-uuid = { version = "0.8.1", features = ["v4"] }
 
 [build-dependencies]
 lalrpop = "0.17.2"

@@ -1,23 +1,56 @@
-use derive_more::{From, Into};
+//! A flat representation of tokens, to allow using LALRPOP with a `TokenTree`.
+
 use proc_macro2::{Delimiter, Ident, Literal, TokenStream, TokenTree};
 use quote::quote;
 use syn::LitStr;
 
 /// A wrapper around `proc_macro2::Span`, to give a `Default` impl.
-#[derive(Clone, Copy, Debug, From, Into)]
-pub struct Span(proc_macro2::Span);
+#[derive(Clone, Copy, Debug)]
+pub struct Span {
+    /// This is a massive hack, to allow slipping information about whether a string is an
+    /// identifier or not into `ValidatedQuery`.
+    pub is_ident: bool,
+
+    inner: proc_macro2::Span,
+}
 
 impl Span {
     /// Combines two `Span`s, defaulting to `Span::call_site()` if `proc_macro2::Span::join` would
     /// return `None`.
     pub fn join(self, other: Self) -> Self {
-        self.0.join(other.0).map(Span).unwrap_or_else(Self::default)
+        self.inner
+            .join(other.inner)
+            .map(Span::from)
+            .unwrap_or_else(Span::default)
     }
 }
 
 impl Default for Span {
     fn default() -> Span {
-        Span(proc_macro2::Span::call_site())
+        Span::from(proc_macro2::Span::call_site())
+    }
+}
+
+impl From<proc_macro2::Span> for Span {
+    fn from(span: proc_macro2::Span) -> Span {
+        Span {
+            is_ident: false,
+            inner: span,
+        }
+    }
+}
+
+impl Into<proc_macro2::Span> for Span {
+    fn into(self) -> proc_macro2::Span {
+        self.inner
+    }
+}
+
+impl crate::validated::Span for Span {
+    fn fmt_span(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        // TODO: It should be possible to slap some #[cfg()]s on this to get a pretty printing, at
+        // a minimum on nightly in the context of the proc macro.
+        write!(fmt, "at {:?}: ", self.inner)
     }
 }
 

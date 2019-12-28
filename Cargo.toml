@@ -1,5 +1,6 @@
 [workspace]
-members = [".", "g1-cli", "g1-common", "g1-macros", "g1-sqlite-connection"]
+members = [".", "g1-common", "g1-macros"]
+# members = [".", "g1-cli", "g1-common", "g1-macros", "g1-sqlite-connection"]
 
 [package]
 authors = ["Nathan Ringo <nathan@remexre.xyz>"]
@@ -15,15 +16,15 @@ version = "0.1.0-alpha.4"
 [dependencies]
 g1-common = { path = "g1-common", version = "0.1.0-alpha.4" }
 g1-macros = { path = "g1-macros", version = "0.1.0-alpha.4" }
-g1-sqlite-connection = { path = "g1-sqlite-connection", optional = true, version = "0.1.0-alpha.4" }
-lazy_static = "1.4.0"
+# g1-sqlite-connection = { path = "g1-sqlite-connection", optional = true, version = "0.1.0-alpha.4" }
+# lazy_static = "1.4.0"
 proc-macro-hack = "0.5.11"
 
-[features]
-default = [] # TODO
-
 [dev-dependencies]
-anyhow = "1.0.25"
-defer = "0.1.0"
-futures = "0.3.1"
-tokio = { version = "0.2.4", features = ["macros"] }
+pretty_assertions = "0.6.1"
+
+# [dev-dependencies]
+# anyhow = "1.0.25"
+# defer = "0.1.0"
+# futures = "0.3.1"
+# tokio = { version = "0.2.4", features = ["macros"] }

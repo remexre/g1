@@ -32,8 +32,8 @@
 )]
 
 pub mod lang;
-#[doc(hidden)]
 pub mod proc_macro;
+pub mod validated;
 
 /*
 pub mod command;
