@@ -81,10 +81,11 @@ pub struct Clause {
 ///     clauses: vec![
 ///         Clause {
 ///             head: Predicate {
-///                 name: Ident::new("edge", Span::default().into()),
+///                 name: "edge".to_string(),
+///                 name_ident: Ident::new("edge", Span::default().into()),
 ///                 args: vec![
-///                     Value::String(LitStr::new("A", Span::default().into())),
-///                     Value::String(LitStr::new("B", Span::default().into())),
+///                     Value::String("A".to_string(), LitStr::new("A", Span::default().into())),
+///                     Value::String("B".to_string(), LitStr::new("B", Span::default().into())),
 ///                 ],
 ///                 span: Span::default(),
 ///             },
@@ -93,10 +94,11 @@ pub struct Clause {
 ///         },
 ///         Clause {
 ///             head: Predicate {
-///                 name: Ident::new("edge", Span::default().into()),
+///                 name: "edge".to_string(),
+///                 name_ident: Ident::new("edge", Span::default().into()),
 ///                 args: vec![
-///                     Value::String(LitStr::new("A", Span::default().into())),
-///                     Value::String(LitStr::new("C", Span::default().into())),
+///                     Value::String("A".to_string(), LitStr::new("A", Span::default().into())),
+///                     Value::String("C".to_string(), LitStr::new("C", Span::default().into())),
 ///                 ],
 ///                 span: Span::default(),
 ///             },
@@ -105,10 +107,11 @@ pub struct Clause {
 ///         },
 ///         Clause {
 ///             head: Predicate {
-///                 name: Ident::new("edge", Span::default().into()),
+///                 name: "edge".to_string(),
+///                 name_ident: Ident::new("edge", Span::default().into()),
 ///                 args: vec![
-///                     Value::String(LitStr::new("B", Span::default().into())),
-///                     Value::String(LitStr::new("C", Span::default().into())),
+///                     Value::String("B".to_string(), LitStr::new("B", Span::default().into())),
+///                     Value::String("C".to_string(), LitStr::new("C", Span::default().into())),
 ///                 ],
 ///                 span: Span::default(),
 ///             },
@@ -117,10 +120,11 @@ pub struct Clause {
 ///         },
 ///         Clause {
 ///             head: Predicate {
-///                 name: Ident::new("path", Span::default().into()),
+///                 name: "path".to_string(),
+///                 name_ident: Ident::new("path", Span::default().into()),
 ///                 args: vec![
-///                     Value::Var(Ident::new("X", Span::default().into())),
-///                     Value::Var(Ident::new("X", Span::default().into())),
+///                     Value::Var("X".to_string(), Ident::new("X", Span::default().into())),
+///                     Value::Var("X".to_string(), Ident::new("X", Span::default().into())),
 ///                 ],
 ///                 span: Span::default(),
 ///             },
@@ -129,27 +133,30 @@ pub struct Clause {
 ///         },
 ///         Clause {
 ///             head: Predicate {
-///                 name: Ident::new("path", Span::default().into()),
+///                 name: "path".to_string(),
+///                 name_ident: Ident::new("path", Span::default().into()),
 ///                 args: vec![
-///                     Value::Var(Ident::new("X", Span::default().into())),
-///                     Value::Var(Ident::new("Z", Span::default().into())),
+///                     Value::Var("X".to_string(), Ident::new("X", Span::default().into())),
+///                     Value::Var("Z".to_string(), Ident::new("Z", Span::default().into())),
 ///                 ],
 ///                 span: Span::default(),
 ///             },
 ///             body: vec![
 ///                 (false, Predicate {
-///                     name: Ident::new("path", Span::default().into()),
+///                     name: "path".to_string(),
+///                     name_ident: Ident::new("path", Span::default().into()),
 ///                     args: vec![
-///                         Value::Var(Ident::new("X", Span::default().into())),
-///                         Value::Var(Ident::new("Y", Span::default().into())),
+///                         Value::Var("X".to_string(), Ident::new("X", Span::default().into())),
+///                         Value::Var("Y".to_string(), Ident::new("Y", Span::default().into())),
 ///                     ],
 ///                     span: Span::default(),
 ///                 }),
 ///                 (false, Predicate {
-///                     name: Ident::new("edge", Span::default().into()),
+///                     name: "edge".to_string(),
+///                     name_ident: Ident::new("edge", Span::default().into()),
 ///                     args: vec![
-///                         Value::Var(Ident::new("Y", Span::default().into())),
-///                         Value::Var(Ident::new("Z", Span::default().into())),
+///                         Value::Var("Y".to_string(), Ident::new("Y", Span::default().into())),
+///                         Value::Var("Z".to_string(), Ident::new("Z", Span::default().into())),
 ///                     ],
 ///                     span: Span::default(),
 ///                 }),
@@ -158,10 +165,11 @@ pub struct Clause {
 ///         },
 ///     ],
 ///     goal: Predicate {
-///         name: Ident::new("path", Span::default().into()),
+///         name: "path".to_string(),
+///         name_ident: Ident::new("path", Span::default().into()),
 ///         args: vec![
-///             Value::Ident(Ident::new("a", Span::default().into())),
-///             Value::Var(Ident::new("X", Span::default().into())),
+///             Value::Ident("a".to_string(), Ident::new("a", Span::default().into())),
+///             Value::Var("X".to_string(), Ident::new("X", Span::default().into())),
 ///         ],
 ///         span: Span::default(),
 ///     },
