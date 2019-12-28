@@ -19,6 +19,7 @@ quote = "1.0.2"
 serde = { version = "1.0.102", features = ["derive", "rc"] }
 syn = { version = "1.0.11", features = ["derive", "parsing"] }
 topological-sort = "0.1.0"
+maplit = "1.0.2"
 
 [build-dependencies]
 lalrpop = "0.17.2"

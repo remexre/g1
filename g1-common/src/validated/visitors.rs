@@ -267,7 +267,7 @@ impl<'a, S: Span> GoalVisitor<'a, S> {
                  }| {
                     let functor = (head.0, head.1.len());
                     let head_name = names.get(&functor).copied().ok_or_else(|| {
-                        ValidationError::NoSuchClause {
+                        ValidationError::NoSuchClauseBuilding {
                             argn: functor.1,
                             name: functor.0.to_string(),
                             span: head.2.clone(),
@@ -279,7 +279,7 @@ impl<'a, S: Span> GoalVisitor<'a, S> {
                         .map(|(negated, name, args, span)| {
                             let functor = (name, args.len());
                             let name = names.get(&functor).copied().ok_or_else(|| {
-                                ValidationError::NoSuchClause {
+                                ValidationError::NoSuchClauseBuilding {
                                     argn: functor.1,
                                     name: functor.0.to_string(),
                                     span: span.clone(),
@@ -307,14 +307,15 @@ impl<'a, S: Span> GoalVisitor<'a, S> {
 
         let functor = (self.name, self.args.len());
         let goal_span = self.span.clone();
-        let name = names
-            .get(&functor)
-            .copied()
-            .ok_or_else(|| ValidationError::NoSuchClause {
-                argn: functor.1,
-                name: functor.0.to_string(),
-                span: goal_span,
-            })?;
+        let name =
+            names
+                .get(&functor)
+                .copied()
+                .ok_or_else(|| ValidationError::NoSuchClauseBuilding {
+                    argn: functor.1,
+                    name: functor.0.to_string(),
+                    span: goal_span,
+                })?;
 
         Ok(ValidatedQuery {
             clauses,

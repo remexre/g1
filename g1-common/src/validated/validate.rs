@@ -1,6 +1,7 @@
 use crate::validated::{
     Span, ValidatedClause, ValidatedPredicate, ValidatedQuery, ValidatedValueInner,
 };
+use maplit::hashmap;
 use std::{
     error::Error,
     fmt::{Display, Formatter, Result as FmtResult},
@@ -59,6 +60,18 @@ pub enum ValidationError<S: Span> {
 
     /// No clause with the given functor existed.
     NoSuchClause {
+        /// The number of arguments.
+        argn: usize,
+
+        /// The name part of the functor.
+        name: i32,
+
+        /// The span of the call.
+        span: S,
+    },
+
+    /// No clause with the given functor existed while building the `ValidatedQuery`.
+    NoSuchClauseBuilding {
         /// The number of arguments.
         argn: usize,
 
@@ -131,6 +144,11 @@ impl<S: Span> Display for ValidationError<S> {
                 span.fmt_span(fmt)?;
                 write!(fmt, "no such clause {}/{}", name, argn)
             }
+
+            ValidationError::NoSuchClauseBuilding { argn, name, span } => {
+                span.fmt_span(fmt)?;
+                write!(fmt, "no such clause {}/{}", name, argn)
+            }
         }
     }
 }
@@ -165,6 +183,55 @@ impl<S: Span> ValidatedQuery<S> {
                             callee: pred.clone(),
                             negated,
                         });
+                    }
+                }
+            }
+        }
+
+        // Thirdly, check the arities for every call, and that every referenced predicate exists.
+        let mut arities = hashmap! {
+            -1 => 2,
+            -2 => 1,
+            -3 => 3,
+            -4 => 3,
+            -5 => 3,
+            -6 => 4,
+        };
+        for clause in self.clauses.iter() {
+            let name = clause.head.name;
+            let argn = clause.head.args.len();
+            if arities.contains_key(&name) {
+                let expected = arities[&name];
+                if expected != argn {
+                    return Err(ValidationError::BadArgn {
+                        expected,
+                        found: argn,
+                        span: clause.head.span.clone(),
+                    });
+                }
+            } else {
+                let _ = arities.insert(name, argn);
+            }
+        }
+        for clause in self.clauses.iter() {
+            for (_, pred) in clause.body.iter() {
+                let argn = pred.args.len();
+                match arities.get(&pred.name).copied() {
+                    Some(expected) => {
+                        if expected != argn {
+                            return Err(ValidationError::BadArgn {
+                                expected,
+                                found: argn,
+                                span: pred.span.clone(),
+                            });
+                        }
+                    }
+                    None => {
+                        return Err(ValidationError::NoSuchClause {
+                            argn,
+                            name: pred.name,
+                            span: pred.span.clone(),
+                        })
                     }
                 }
             }
