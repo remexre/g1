@@ -111,9 +111,6 @@ pub enum Token {
     /// An exclaimation mark, `!`.
     Not,
 
-    /// The inequality operator, `!=`.
-    NotEquals,
-
     /// A comma character (',').
     Comma,
 
@@ -122,9 +119,6 @@ pub enum Token {
 
     /// The turnstile operator, `:-`.
     Turnstile,
-
-    /// The equals sign, `=`.
-    Equals,
 
     /// The "query operator", `?-`.
     Query,

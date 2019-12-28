@@ -9,7 +9,6 @@ use std::{collections::HashMap, sync::Arc};
 use topological_sort::TopologicalSort;
 
 static BUILTINS: &[(&str, usize)] = &[
-    ("=", 2),
     ("atom", 1),
     ("name", 3),
     ("edge", 3),

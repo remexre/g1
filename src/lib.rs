@@ -42,7 +42,7 @@ pub use g1_common as common;
 ///             },
 ///             body: vec![
 ///                 (false, ValidatedPredicate {
-///                     name: -2,
+///                     name: -1,
 ///                     args: vec![
 ///                         ValidatedValue {
 ///                             inner: ValidatedValueInner::Var(0),
@@ -117,7 +117,7 @@ pub use g1_common as common;
 ///             },
 ///             body: vec![
 ///                 (false, ValidatedPredicate {
-///                     name: -4,
+///                     name: -3,
 ///                     args: vec![
 ///                         ValidatedValue {
 ///                             inner: ValidatedValueInner::Var(0),
@@ -135,7 +135,7 @@ pub use g1_common as common;
 ///                     span: (),
 ///                 }),
 ///                 (true, ValidatedPredicate {
-///                     name: -4,
+///                     name: -3,
 ///                     args: vec![
 ///                         ValidatedValue {
 ///                             inner: ValidatedValueInner::Var(1),

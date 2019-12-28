@@ -190,12 +190,11 @@ impl<S: Span> ValidatedQuery<S> {
 
         // Thirdly, check the arities for every call, and that every referenced predicate exists.
         let mut arities = hashmap! {
-            -1 => 2,
-            -2 => 1,
+            -1 => 1,
+            -2 => 3,
             -3 => 3,
             -4 => 3,
-            -5 => 3,
-            -6 => 4,
+            -5 => 4,
         };
         for clause in self.clauses.iter() {
             let name = clause.head.name;
@@ -284,46 +283,30 @@ impl<S: Span> ValidatedClause<S> {
         }
 
         // Lastly, check positivity. See the blog post (G1's Query Language) for details.
+        let mut needed_positively = vec![false; self.vars as usize];
         let mut used_positively = vec![false; self.vars as usize];
-        let mut eq_vars = Vec::new();
-        let mut neq_vars = Vec::new();
+        self.head.for_each_var(|var, _| {
+            needed_positively[var as usize] = true;
+            Ok(())
+        })?;
         for (negated, pred) in self.body.iter() {
-            if pred.name == -1 {
-                if pred.args.len() != 2 {
-                    return Err(ValidationError::BadArgn {
-                        expected: 2,
-                        found: pred.args.len(),
-                        span: pred.span.clone(),
-                    });
-                }
-                match (&pred.args[0].inner, &pred.args[1].inner) {
-                    (ValidatedValueInner::Var(l), ValidatedValueInner::Var(r)) => {
-                        if *negated {
-                            neq_vars.push((l, r));
-                        } else {
-                            eq_vars.push((l, r));
-                        }
-                    }
-                    (ValidatedValueInner::Var(var), ValidatedValueInner::Str(_))
-                    | (ValidatedValueInner::Str(_), ValidatedValueInner::Var(var)) => {
-                        if !*negated {
-                            used_positively[*var as usize] = true;
-                        }
-                    }
-                    _ => {}
-                }
-            } else if !*negated {
+            if *negated {
+                pred.for_each_var(|var, _| {
+                    needed_positively[var as usize] = true;
+                    Ok(())
+                })?;
+            } else {
                 pred.for_each_var(|var, _| {
                     used_positively[var as usize] = true;
                     Ok(())
                 })?;
             }
         }
-        for (var, ok) in used_positively.iter().enumerate() {
-            if !ok {
+        for var in 0..self.vars {
+            if needed_positively[var as usize] && !used_positively[var as usize] {
                 return Err(ValidationError::NeverUsedPositively {
                     clause: self.clone(),
-                    var: var as u32,
+                    var,
                 });
             }
         }
