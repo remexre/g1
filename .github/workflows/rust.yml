@@ -21,12 +21,6 @@ jobs:
 
     - name: Run tests
       run: cargo +stable test --all --all-features --verbose
-
-    - name: Run examples
-      run: |
-        cargo +stable run --all-features --example blobs --verbose
-        cargo +stable run --all-features --example macro --verbose
-        cargo +stable run --all-features --example readme --verbose
   nightly:
     runs-on: ubuntu-latest
     steps:
@@ -45,9 +39,3 @@ jobs:
 
     - name: Run tests
       run: cargo +nightly test --all --all-features --verbose
-
-    - name: Run examples
-      run: |
-        cargo +nightly run --all-features --example blobs --verbose
-        cargo +nightly run --all-features --example macro --verbose
-        cargo +nightly run --all-features --example readme --verbose
